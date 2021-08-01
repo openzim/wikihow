@@ -4,5 +4,5 @@ class wikihow2zim:
     def __init__(self, **kwargs):
         print("kwargs", kwargs)
 
-    def run():
+    def run(self):
         pass

@@ -3,7 +3,7 @@
 import sys
 import argparse
 
-from .constants import NAME, getLogger
+from .constants import NAME, setDebug, getLogger
 
 def main():
     parser = argparse.ArgumentParser(
@@ -38,7 +38,16 @@ def main():
         help="no external links"
     )
 
+    parser.add_argument(
+        "-d",
+        "--debug", 
+        help="Enable verbose output", 
+        action="store_true", 
+        default=False
+    )
+
     args = parser.parse_args()
+    print(args)
     setDebug(args.debug)
     logger = getLogger()
 
