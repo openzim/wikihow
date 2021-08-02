@@ -5,9 +5,11 @@ from setuptools import setup
 
 root_dir = pathlib.Path(__file__).parent
 
+
 def read(*names, **kwargs):
     with open(root_dir.joinpath(*names), "r") as fh:
         return fh.read()
+
 
 setup(
     name="wikihow2zim",
@@ -15,9 +17,9 @@ setup(
     description="Make ZIM file from WikiHow articles",
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
-    author=" ",
-    author_email=" ",
-    url=" ",
+    author="Kiwix Team",
+    author_email="dev@kiwix.org",
+    url="https://kiwix.org/",
     keywords="kiwix zim offline wikihow",
     license="GPLv3+",
     packages=["wikihow2zim"],
@@ -28,6 +30,7 @@ setup(
     ],
     zip_safe=False,
     include_package_data=True,
+    package_data={"": ["VERSION"]},
     entry_points={
         "console_scripts": [
             "wikihow2zim=wikihow2zim.__main__:main",
