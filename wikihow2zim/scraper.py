@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 options = [
-    "commons",
     "debug",
     "language",
     "low_quality",
@@ -17,7 +16,6 @@ class wikihow2zim:
             if option not in kwargs:
                 raise ValueError(f"Missing parameter `{option}`")
 
-        self.commons = kwargs.get("commons")
         self.debug = kwargs.get("debug")
         self.language = kwargs.get("language")
         self.low_quality = kwargs.get("low_quality")

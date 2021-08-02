@@ -13,13 +13,9 @@ def main():
 
     parser.add_argument(
         "--language",
+        choices=['en', 'de', 'fr'],
+        default='en',
         help="Choose the language (en, de, fr ...)"
-    )
-
-    parser.add_argument(
-        "--commons",
-        help="commons",
-        default="commons"
     )
 
     parser.add_argument(
