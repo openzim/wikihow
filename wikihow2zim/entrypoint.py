@@ -18,7 +18,8 @@ def main():
 
     parser.add_argument(
         "--commons",
-        help="commons"
+        help="commons",
+        default="commons"
     )
 
     parser.add_argument(
@@ -50,7 +51,6 @@ def main():
     )
 
     args = parser.parse_args()
-    print(args)
     setDebug(args.debug)
     logger = getLogger()
 
