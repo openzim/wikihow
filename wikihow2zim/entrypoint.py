@@ -12,34 +12,37 @@ def main():
     )
 
     parser.add_argument(
-        "-l",
         "--language",
         help="Choose the language (en, de, fr ...)"
     )
 
     parser.add_argument(
-        "-c",
         "--commons",
         help="commons"
     )
 
     parser.add_argument(
-        "--s3",
-        help="s3"
+        "--optimization-cache",
+        help="URL with credentials to S3 for using as optimization cache",
+        dest="s3_url_with_credentials",
     )
 
     parser.add_argument(
-        "-- low-quality",
-        help="low quality"
+        "--low-quality",
+        help="Uses only the `low_res` version of videos if available. "
+        "If not, recompresses using agressive compression.",
+        action="store_true",
+        default=False,
     )
 
     parser.add_argument(
-        "-- no-external-links",
-        help="no external links"
+        "--no-external-links",
+        help="If specified, don't include external links",
+        action="store_true",
+        default=False
     )
 
     parser.add_argument(
-        "-d",
         "--debug", 
         help="Enable verbose output", 
         action="store_true", 
