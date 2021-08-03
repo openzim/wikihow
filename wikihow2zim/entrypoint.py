@@ -3,7 +3,7 @@
 import sys
 import argparse
 
-from .constants import NAME, SCRAPER, setDebug, getLogger
+from .constants import NAME, SCRAPER, URLS, setDebug, getLogger
 
 
 def main():
@@ -11,12 +11,33 @@ def main():
         prog=NAME,
         description="Scraper to create ZIM files wikihow articles",
     )
-
+    #["en", "es", "pt", "it", "fr", "ru", "de", "zh", "nl", "cz", "id", "jp", "hi", "th", "ar", "vn"],
     parser.add_argument(
         "--language",
-        choices=["en", "de", "fr"],
+        choices=list(URLS.keys()),
         default="en",
-        help="Choose the language (en, de, fr ...)",
+        help="The language is specified using the language code. "
+                "The default language is English. "
+                "You may choose from one of the following languages that wikihow "
+                "is available in: "
+                "English-en, "
+                "Spanish-es, "
+                "Portugese-pt, "
+                "Italian-it, "
+                "French-fr, "
+                "Russian-ru, "
+                "German-de, "
+                "Chinese-zh, "
+                "Netherlands-nl, "
+                "Chech-cz, "
+                "Indonesian-id, "
+                "Japanese-jp, "
+                "Hindi-hi, "
+                "Thai-th, "
+                "Arabic-ar, "
+                "Vietnamese-vn, "
+                "Korean-ko, "
+                "Turkish-tr "
     )
 
     parser.add_argument(

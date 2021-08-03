@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from .constants import URLS
+
 options = [
     "language",
     "name",
@@ -27,6 +29,8 @@ class wikihow2zim:
 
         for option in options:
             setattr(self, option, kwargs[option])
+
+        self.url = URLS[self.language]
 
     def run(self):
         pass

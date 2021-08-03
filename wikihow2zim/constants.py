@@ -13,6 +13,27 @@ with open(ROOT_DIR.joinpath("VERSION"), "r") as fh:
 
 SCRAPER = f"{NAME} {VERSION}"
 
+URLS = {
+    "en": "https://www.wikihow.com",
+    "es": "https://es.wikihow.com",
+    "pt": "https://pt.wikihow.com",
+    "it": "https://www.wikihow.it",
+    "fr": "https://fr.wikihow.com",
+    "ru": "https://ru.wikihow.com",
+    "de": "https://de.wikihow.com",
+    "zh": "https://zh.wikihow.com",
+    "nl": "https://nl.wikihow.com",
+    "cz": "https://www.wikihow.cz",
+    "id": "https://id.wikihow.com",
+    "jp": "https://www.wikihow.jp",
+    "hi": "https://hi.wikihow.com",
+    "th": "https://th.wikihow.com",
+    "ar": "https://ar.wikihow.com",
+    "vn": "https://www.wikihow.vn",
+    "ko": "https://ko.wikihow.com",
+    "tr": "https://www.wikihow.com.tr"
+}
+
 
 class Global:
     debug = False
