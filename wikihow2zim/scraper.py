@@ -26,9 +26,6 @@ class wikihow2zim:
             if option not in kwargs:
                 raise ValueError(f"Missing parameter `{option}`")
 
-        if kwargs["language"] not in URLS:
-            raise ValueError(f"the specified language {self.language} is not available")
-
         for option in options:
             setattr(self, option, kwargs[option])
 

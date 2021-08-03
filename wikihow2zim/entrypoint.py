@@ -12,17 +12,11 @@ def main():
         description="Scraper to create ZIM files wikihow articles",
     )
 
-    # Define help text for language commandline argument:
-    language_help = (
-        "The language is specified using the language code. "
-        + "The default language is English. You may choose from one of the "
-        + "following languages that wikihow is available in:"
-    )
-    for lang in URLS:
-        language_help = language_help + " " + lang + "-" + URLS[lang]
-
     parser.add_argument(
-        "--language", choices=list(URLS.keys()), required=True, help=language_help
+        "--language",
+        choices=URLS.keys(),
+        required=True,
+        help="Wikihow website to build from",
     )
 
     parser.add_argument(
@@ -31,11 +25,23 @@ def main():
     )
 
     parser.add_argument(
+        "--title", help="Custom title for your ZIM. Wikihow homepage title otherwise"
+    )
+
+    parser.add_argument(
+        "--description",
+        help="Custom description for your ZIM. "
+        "Wikihow homepage description (meta) otherwise",
+    )
+
+    parser.add_argument(
         "--publisher", help="Custom publisher name (ZIM metadata). “OpenZIM” otherwise"
     )
 
     parser.add_argument(
-        "--tags", help="List of comma-separated Tags for the ZIM file. "
+        "--tags",
+        help="List of comma-separated Tags for the ZIM file. "
+        "category:other and _videos:yes added automatically",
     )
 
     parser.add_argument(
