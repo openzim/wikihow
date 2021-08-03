@@ -11,49 +11,23 @@ def main():
         prog=NAME,
         description="Scraper to create ZIM files wikihow articles",
     )
-    #["en", "es", "pt", "it", "fr", "ru", "de", "zh", "nl", "cz", "id", "jp", "hi", "th", "ar", "vn"],
+
+    # Define help text for language commandline argument:
+    language_help = (
+        "The language is specified using the language code. "
+        + "The default language is English. You may choose from one of the "
+        + "following languages that wikihow is available in:"
+    )
+    for lang in URLS:
+        language_help = language_help + " " + lang + "-" + URLS[lang]
+
     parser.add_argument(
-        "--language",
-        choices=list(URLS.keys()),
-        default="en",
-        help="The language is specified using the language code. "
-                "The default language is English. "
-                "You may choose from one of the following languages that wikihow "
-                "is available in: "
-                "English-en, "
-                "Spanish-es, "
-                "Portugese-pt, "
-                "Italian-it, "
-                "French-fr, "
-                "Russian-ru, "
-                "German-de, "
-                "Chinese-zh, "
-                "Netherlands-nl, "
-                "Chech-cz, "
-                "Indonesian-id, "
-                "Japanese-jp, "
-                "Hindi-hi, "
-                "Thai-th, "
-                "Arabic-ar, "
-                "Vietnamese-vn, "
-                "Korean-ko, "
-                "Turkish-tr "
+        "--language", choices=list(URLS.keys()), required=True, help=language_help
     )
 
     parser.add_argument(
         "--name",
         help="ZIM name. Used as identifier and filename (date will be appended)",
-        required=True,
-    )
-
-    parser.add_argument(
-        "--title",
-        help="Custom title for your ZIM. Wikihow article title otherwise",
-    )
-
-    parser.add_argument(
-        "--description",
-        help="Custom description for your ZIM. Wikihow article description otherwise",
     )
 
     parser.add_argument(
@@ -61,9 +35,7 @@ def main():
     )
 
     parser.add_argument(
-        "--tags",
-        help="List of comma-separated Tags for the ZIM file. "
-        "category:other, kolibri, and _videos:yes added automatically",
+        "--tags", help="List of comma-separated Tags for the ZIM file. "
     )
 
     parser.add_argument(

@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from .constants import URLS
+from .constants import URLS, getLogger
 
+logger = getLogger()
 options = [
     "language",
     "name",
-    "title",
-    "description",
     "publisher",
     "tags",
     "output_dir",
@@ -27,10 +26,15 @@ class wikihow2zim:
             if option not in kwargs:
                 raise ValueError(f"Missing parameter `{option}`")
 
+        if kwargs["language"] not in URLS:
+            raise ValueError(f"the specified language {self.language} is not available")
+
         for option in options:
             setattr(self, option, kwargs[option])
 
         self.url = URLS[self.language]
 
     def run(self):
-        pass
+        logger.info(
+            f"running the scraper with the following arguments: \n{self.__dict__}"
+        )

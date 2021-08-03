@@ -31,7 +31,7 @@ URLS = {
     "ar": "https://ar.wikihow.com",
     "vn": "https://www.wikihow.vn",
     "ko": "https://ko.wikihow.com",
-    "tr": "https://www.wikihow.com.tr"
+    "tr": "https://www.wikihow.com.tr",
 }
 
 

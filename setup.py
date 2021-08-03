@@ -37,8 +37,6 @@ setup(
         ]
     },
     classifiers=[
-        "Development Status :: ",
-        "Intended Audience :: ",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.8",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
