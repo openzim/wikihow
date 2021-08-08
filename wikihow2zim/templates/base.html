@@ -3,19 +3,20 @@
     <head>
         <meta charset="utf-8">
         <title>
-            {{ title }}
+            {{title}}
         </title>
         <link href="https://www.wikihow.com/skins/WikiHow/wH-initials_152x152.png" rel="apple-touch-icon"/>
-        <link rel="stylesheet" type="text/css" href="{{ to_root }}static/css/base.css" />
-        <link rel="stylesheet" href="base.css">
+        <link rel="stylesheet" type="text/css" href="{{ to_root }}assets/static/base.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="{{description}}">
     </head>
-
-
     <body>
         <!-- Header -->
-        <div class="header_container" id="header_container">
-            <div class="header" id="header" >
-                
+        <div id="header_container">
+            <div id="header" >
+                <a href="{{ to_root }}templates/base.html">
+                    <img src="{{ to_root }}assets/static/wikihow_logo.png" style="height: 45%">
+                </a>
             </div>
         </div>
 
@@ -23,19 +24,19 @@
         </div>
         
         <!-- Article Content -->
-        <div id="content_wrapper" role="main">
+        <div id="content_wrapper" >
             <div id="content_inner">
-                {{ content }}
+                {% block content %}{% endblock %}
             </div>
         </div>
 
         <!-- Footer -->
         <div id="footer" role="navigation">
             <div id="footer_inner">
-                <div id="footer_crumbs">
-                    <ul class="breadcrumbs">
-                        {{ link_breadcrumbs_footer }}
-                    </ul>
+                {% block footer_breadcrumbs %}
+                {% endblock %}
+                <div id="footer_help">
+                    <a href="{{ to_root }}templates/categories.html"> List Categories </a>
                 </div>
             </div>
         </div>
