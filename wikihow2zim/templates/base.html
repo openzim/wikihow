@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>
+            {{ title }}
+        </title>
+        <link href="https://www.wikihow.com/skins/WikiHow/wH-initials_152x152.png" rel="apple-touch-icon"/>
+        <link rel="stylesheet" type="text/css" href="{{ to_root }}static/css/base.css" />
+        <link rel="stylesheet" href="base.css">
+    </head>
+
+
+    <body>
+        <!-- Header -->
+        <div class="header_container" id="header_container">
+            <div class="header" id="header" >
+                
+            </div>
+        </div>
+
+        <div class="header_container shrunk" id="header_container_small">
+        </div>
+        
+        <!-- Article Content -->
+        <div id="content_wrapper" role="main">
+            <div id="content_inner">
+                {{ content }}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div id="footer" role="navigation">
+            <div id="footer_inner">
+                <div id="footer_crumbs">
+                    <ul class="breadcrumbs">
+                        {{ link_breadcrumbs_footer }}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
