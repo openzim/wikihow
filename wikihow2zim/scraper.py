@@ -52,6 +52,21 @@ class wikihow2zim:
     def templates_dir(self):
         return ROOT_DIR.joinpath("templates")
 
+    def add_icon(self):
+        try:
+            response = requests.get(self.url)
+        except Exception as exc:
+            logger.critical(f"Unable to retrieve homepage at {self.url}: {exc}")
+            logger.exception(exc)
+            return 1
+
+        soup = bs4.BeautifulSoup(response.content, "lxml")
+
+        icon = soup.find(name="link", attrs={"rel": "apple-touch-icon"})
+        if icon:
+            icon_resp = requests.get(icon.attrs.get("href"))
+            self.creator.add_illustration(48, icon_resp.content)
+
     def add_assets(self):
         assets_root = pathlib.Path(ROOT_DIR.joinpath("assets"))
         for fpath in assets_root.glob("**/*"):
@@ -91,20 +106,7 @@ class wikihow2zim:
         self.creator = Creator(filename=fpath).set_mainpath("Home")
         self.creator.start()
 
-        # fetch icon from website and set it as Zim Icon
-        try:
-            response = requests.get(self.url)
-        except Exception as exc:
-            logger.critical(f"Unable to retrieve homepage at {self.url}: {exc}")
-            logger.exception(exc)
-            return 1
-
-        soup = bs4.BeautifulSoup(response.content, "lxml")
-
-        icon = soup.find(name="link", attrs={"rel": "apple-touch-icon"})
-        if icon:
-            icon_resp = requests.get(icon.attrs.get("href"))
-            self.creator.add_illustration(48, icon_resp.content)
+        self.add_icon()
 
         self.add_assets()
 
