@@ -1,0 +1,128 @@
+html {
+    margin:0;
+    padding:0;
+    border:0;
+    font:inherit;
+    font-size:100%;
+    vertical-align:baseline;
+    height:100%;
+}
+
+body {
+    margin:0;
+    padding:0;
+    border:0;
+    font:inherit;
+    vertical-align:baseline;
+    -webkit-tap-highlight-color:transparent;
+    height:100%;
+    background-color:#f3f3f3;
+    color:#545454;
+    font-family:Helvetica,"Nimbus Sans L",Arial,"Liberation Sans",sans-serif;
+    line-height:1.4;
+    font-size:16px;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+}
+
+div {
+    margin:0;
+    padding:0;
+    border:0;
+    font:inherit;
+    font-size:100%;
+    vertical-align:baseline;
+}
+
+ul {
+    margin:0;
+    padding:0;
+    border:0;
+    font:inherit;
+    font-size:100%;
+    vertical-align:baseline;
+    list-style:none;
+}
+
+#header_container {
+    height:55px;
+    background-color:#93B874;
+    border:0;
+    z-index:10;
+    top:0;
+    width:100%;
+}
+
+#header {
+    height:35px;
+    margin-left:2%;
+    margin-right:2%;
+    padding-top:10px;
+    padding-bottom:10px;
+}
+
+#header_logo {
+    height:35px;
+}
+
+.breadcrumbs li {
+    display:inline-block;
+    padding-right:.3em;
+}
+
+.breadcrumbs li:after {
+    content:' \20\00BB';
+}
+
+.breadcrumbs li:last-child:after {
+    content:'';
+}
+
+#content_wrapper {
+    padding-top:72px;
+    background-color:#f3f3f3;
+    min-height: 200px;
+}
+
+#content_inner {
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+#footer {
+    font-size: .9em;
+    background-color: #93B874;
+    color: #FFFFFF;
+    padding-bottom:3px;
+}
+
+#footer a {
+    font-size: .9em;
+    background-color: #93B874;
+    color: #FFFFFF;
+}
+
+#footer_logo_container{
+    margin-left:2%;
+    margin-right:2%;
+    border-bottom: 1px solid;
+    border-bottom-color: #8a948b;
+    height:35px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+#footer_logo {
+    height:35px;
+}
+
+.footer_links {
+    margin-left:80%;
+    margin-right:5%;
+    max-width:1070px;
+    padding-top:2.5px;
+}
+
+#footer_crumbs {
+    color: #FFFFFF;
+}

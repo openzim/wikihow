@@ -30,7 +30,7 @@ setup(
     ],
     zip_safe=False,
     include_package_data=True,
-    package_data={"": ["VERSION"]},
+    package_data={"": ["VERSION", "templates/*", "assets/static/*"]},
     entry_points={
         "console_scripts": [
             "wikihow2zim=wikihow2zim.__main__:main",
