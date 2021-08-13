@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
 import pathlib
 import requests
 
@@ -72,7 +71,10 @@ class wikihow2zim:
         )
 
         # Add wikihow logo:
-        url = "https://www.wikihow.com/extensions/wikihow/mobile/images/wikihow_logo_230.png"
+        url = (
+            "https://www.wikihow.com/extensions/wikihow/mobile"
+            "/images/wikihow_logo_230.png"
+        )
         self.creator.add_item(
             URLItem(
                 url=url,
@@ -82,7 +84,7 @@ class wikihow2zim:
         )
 
     def run(self):
-        logger.info(f"Running the scraper")
+        logger.info("Running the scraper")
 
         # Set up the output zim file:
         fpath = pathlib.Path(self.output_dir).joinpath("output.zim")
