@@ -76,12 +76,107 @@ class wikihow2zim:
                 path=str(fpath.relative_to(ROOT_DIR)), fpath=fpath
             )
 
+    def get_article(self, article_url):
+        try:
+            response = requests.get(article_url)
+        except Exception as exc:
+            logger.critical(f"Unable to retrieve homepage at {cat_url}: {exc}")
+            logger.exception(exc)
+
+        soup = bs4.BeautifulSoup(response.text, "html.parser")
+
+        # article = self.env.get_template("article.html")
+        # self.creator.add_item_for(
+        #     path="category/" + article_title,
+        #     title="article_title",
+        #     content=article.render(title=article_title, description=description),
+        #     mimetype="text/html",
+        # )
+
+        # Add images:
+        # url = (
+        #     "https://www.wikihow.com/extensions/wikihow/mobile"
+        #     "/images/wikihow_logo_230.png"
+        # )
+        # self.creator.add_item(
+        #     URLItem(
+        #         url=url,
+        #         path="assets/static/wikihow_logo.png",
+        #         mimetype="image/png",
+        #     )
+        # )
+
+    def walk_subcategories(self, main_wiki_url, cat_url, recursion_depth):
+        try:
+            response = requests.get(cat_url)
+        except Exception as exc:
+            logger.critical(f"Unable to retrieve homepage at {cat_url}: {exc}")
+            logger.exception(exc)
+
+        soup = bs4.BeautifulSoup(response.text, "html.parser")
+        article_divs = soup.find_all("div", {"class": "responsive_thumb"})
+        for article_div in article_divs:
+            article_url = article_div.find("a")["href"]
+            if not article_url in self.articles_list:
+                self.articles_list[article_url] = [str(recursion_depth) + " " + cat_url]
+                self.get_article(article_url)
+            else:
+                self.articles_list[article_url].append(
+                    str(recursion_depth) + " " + cat_url
+                )
+
+        subcat_divs = soup.find_all("div", {"class": "subcat_container"})
+        for subcat_div in subcat_divs:
+            subcat_url = main_wiki_url + subcat_div.find("a")["href"]
+            if not subcat_url in self.subcat_list:
+                self.subcat_list[subcat_url] = [str(recursion_depth) + " " + cat_url]
+            else:
+                self.subcat_list[subcat_url].append(
+                    str(recursion_depth) + " " + cat_url
+                )
+            print(str(recursion_depth) + " category " + subcat_url, flush=True)
+            self.walk_subcategories(main_wiki_url, subcat_url, recursion_depth + 1)
+
+    def walk_categories(self):
+        # Get all the articles by walking through all the main categories
+        # and the sub-categories
+
+        self.articles_list = {}  # keep track of each article processed and
+        # where each article was referenced from
+        self.subcat_list = {}  # keep track of each subcategory processed, and
+        # where each subcategory was referenced from
+
+        main_wiki_url = "https://www.wikihow.com"
+        sitemap_url = "https://www.wikihow.com/Special:Sitemap"
+
+        try:
+            response = requests.get(sitemap_url)
+        except Exception as exc:
+            logger.critical(f"Unable to retrieve homepage at {url}: {exc}")
+            logger.exception(exc)
+
+        soup = bs4.BeautifulSoup(response.text, "html.parser")
+
+        # Find main categories
+        category_divs = soup.find_all("div", {"class": "cat_list"})
+        self.main_categories = []
+        for div in category_divs:
+            h3 = div.find("h3")
+            cat_url = main_wiki_url + h3.find("a")["href"]
+            print("0 category " + cat_url, flush=True)
+            current_category = [h3.text, self.output_dir + "/C" + h3.find("a")["href"]]
+            self.main_categories.append(current_category)
+            self.walk_subcategories(main_wiki_url, cat_url, 1)
+
     def add_homepage(self):
-        template = self.env.get_template("base.html")
+        # Add content to zim file
+        template = self.env.get_template("home.html")
         self.creator.add_item_for(
             path="Home",
             title="Home",
-            content=template.render(title="Home", description="Home"),
+            content=template.render(
+                title="Home", description="Home", main_categories=self.main_categories
+            ),
             mimetype="text/html",
         )
 
@@ -98,68 +193,6 @@ class wikihow2zim:
             )
         )
 
-    def walk_subcategories(self, main_wiki_url, cat_url, recursion_depth):
-        try:
-            response = requests.get(cat_url)
-        except Exception as exc:
-            logger.critical(f"Unable to retrieve homepage at {curl}: {exc}")
-            logger.exception(exc)
-
-        soup = bs4.BeautifulSoup(response.text, "html.parser")
-        article_divs = soup.find_all("div", {"class": "responsive_thumb"})
-        for article_div in article_divs:
-            article_url = article_div.find("a")["href"]
-            if not article_url in self.articles_list:
-                self.articles_list[article_url] = [str(recursion_depth) + " " + cat_url]
-                # get html create zim
-            else:
-                self.articles_list[article_url].append(str(recursion_depth) + " " + cat_url)
-
-        subcat_divs = soup.find_all("div", {"class": "subcat_container"})
-        for subcat_div in subcat_divs:
-            subcat_url = main_wiki_url + subcat_div.find("a")["href"]
-            if not subcat_url in self.subcat_list:
-                self.subcat_list[subcat_url] = [str(recursion_depth) + " " + cat_url]
-            else:
-                self.subcat_list[subcat_url].append(str(recursion_depth) + " " + cat_url)
-            print(str(recursion_depth) + " category " + subcat_url, flush=True)
-            self.walk_subcategories(main_wiki_url, subcat_url, recursion_depth + 1)
-
-
-    def walk_categories(self):
-        # Get all the articles by walking through all the main categories
-        # and the sub-categories
-
-        self.articles_list = {} # keep track of each article processed and
-                                # where each article was referenced from
-        self.subcat_list = {} # keep track of each subcategory processed, and
-                                # where each subcategory was referenced from
-
-        main_wiki_url = "https://www.wikihow.com"
-        sitemap_url = "https://www.wikihow.com/Special:Sitemap"
-
-        try:
-            response = requests.get(sitemap_url)
-        except Exception as exc:
-            logger.critical(f"Unable to retrieve homepage at {url}: {exc}")
-            logger.exception(exc)
-
-        soup = bs4.BeautifulSoup(response.text, "html.parser")
-
-        category_divs = soup.find_all("div", {"class": "cat_list"})
-        counts = 0
-        for div in category_divs:
-            # Main Categories
-            h3 = div.find_all("h3")
-            for h in h3:
-                cat_url = main_wiki_url + h.find("a")["href"]
-                print("0 category " + cat_url, flush=True)
-                self.walk_subcategories(main_wiki_url, cat_url, 1)
-                counts = counts + 1
-            if counts >= 1:
-                break
-
-
     def run(self):
         logger.info("Running the scraper")
 
@@ -172,11 +205,11 @@ class wikihow2zim:
 
         self.add_assets()
 
-        self.add_homepage()
-
         self.walk_categories()
 
-        print(self.articles_list)
-        print(self.subcat_list)
+        self.add_homepage()
+
+        logger.debug(self.articles_list)
+        logger.debug(self.subcat_list)
 
         self.creator.finish()
