@@ -89,7 +89,9 @@ class wikihow2zim:
         article_title = soup.find("div", {"class": "pre-content"}).find("h1").text
 
         # Get the intro
-        intro = soup.find("div", {"id": "intro"}).find("div", {"id": "mf-section-0"}).text
+        intro = (
+            soup.find("div", {"id": "intro"}).find("div", {"id": "mf-section-0"}).text
+        )
 
         # Get the methods/parts
         methods = []
@@ -97,8 +99,42 @@ class wikihow2zim:
         for node in soup.find_all("div", {"class": "steps"}):
 
             method = {}
-            #method["number"] = 
+
+            # Get method title
             method["title"] = node.find("span", {"class": "mw-headline"}).text
+
+            # Get method sections:
+            method["steps"] = []
+            steps_list = node.find("div", {"class": "section_text"}).select(
+                "li[id*=step-id]"
+            )
+
+            # Get the title, text and images for all the steps in the given method/part
+            for s in steps_list:
+
+                step = {}
+                image = s.find("a", {"class": "image"})
+                if image is not None:
+                    step["image"] = image["href"]
+                else:
+                    step["image"] = None
+
+                step["title"] = str(
+                    s.find("div", {"class": "step"}).find("b", {"class": "whb"}).text
+                )
+
+                text = s.find("div", {"class": "step"})
+                if text.find("script"):
+                    text.find("script").decompose()
+                if text.find("b", {"class": "whb"}):
+                    text.find("b", {"class": "whb"}).decompose()
+                sups = text.find_all("sup")
+                for ss in sups:
+                    ss.decompose()
+                step["text"] = text
+
+                method["steps"].append(step)
+
             methods.append(method)
 
         sys.exit()
