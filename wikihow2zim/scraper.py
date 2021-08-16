@@ -139,26 +139,13 @@ class wikihow2zim:
 
         sys.exit()
 
-        # article = self.env.get_template("article.html")
-        # self.creator.add_item_for(
-        #     path="category/" + article_title,
-        #     title="article_title",
-        #     content=article.render(title=article_title, description=description),
-        #     mimetype="text/html",
-        # )
-
-        # Add images:
-        # url = (
-        #     "https://www.wikihow.com/extensions/wikihow/mobile"
-        #     "/images/wikihow_logo_230.png"
-        # )
-        # self.creator.add_item(
-        #     URLItem(
-        #         url=url,
-        #         path="assets/static/wikihow_logo.png",
-        #         mimetype="image/png",
-        #     )
-        # )
+        article = self.env.get_template("article.html")
+        self.creator.add_item_for(
+            path="category/" + article_title,
+            title="article_title",
+            content=article.render(title=article_title, intro=intro, methods=methods),
+            mimetype="text/html",
+        )
 
     def walk_subcategories(self, main_wiki_url, cat_url, recursion_depth):
         try:
