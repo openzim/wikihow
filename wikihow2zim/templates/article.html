@@ -6,6 +6,14 @@
     </div>
 
     <div class="content" id="bodyContent">
+        {% for method in methods %}
+            <h1> {{ method.get('title') }} </h1>
+            {% for step in method.get('steps') %}
+                <p><b> {{ step.get('title') }} </b></p>
+                <p> {{ step.get('text') }} </p>
+                <p> {{ step.get('image') }} </p>
+            {% endfor %}
+        {% endfor %}
     </div>
 {% endblock %}
 

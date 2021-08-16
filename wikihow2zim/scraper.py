@@ -86,7 +86,7 @@ class wikihow2zim:
         soup = bs4.BeautifulSoup(response.text, "html.parser")
 
         # Get the article title
-        article_title = soup.find("div", {"class": "pre-content"}).find("h1").text
+        article_title = str(soup.find("div", {"class": "pre-content"}).find("h1").text).replace(" ","-")
 
         # Get the intro
         intro = (
@@ -101,7 +101,7 @@ class wikihow2zim:
             method = {}
 
             # Get method title
-            method["title"] = node.find("span", {"class": "mw-headline"}).text
+            method["title"] = str(node.find("span", {"class": "mw-headline"}).text).replace(" ","-")
 
             # Get method sections:
             method["steps"] = []
@@ -123,23 +123,24 @@ class wikihow2zim:
                     s.find("div", {"class": "step"}).find("b", {"class": "whb"}).text
                 )
 
-                text = s.find("div", {"class": "step"})
-                if text.find("script"):
-                    text.find("script").decompose()
-                if text.find("b", {"class": "whb"}):
-                    text.find("b", {"class": "whb"}).decompose()
-                sups = text.find_all("sup")
+                text_content = s.find("div", {"class": "step"})
+                if text_content.find("script"):
+                    text_content.find("script").decompose()
+                if text_content.find("b", {"class": "whb"}):
+                    text_content.find("b", {"class": "whb"}).decompose()
+                sups = text_content.find_all("sup")
                 for ss in sups:
                     ss.decompose()
-                step["text"] = text
+                step["text"] = text_content.text
 
                 method["steps"].append(step)
 
             methods.append(method)
 
-        sys.exit()
-
         article = self.env.get_template("article.html")
+
+        print(article.render(title=article_title, intro=intro, methods=methods))
+        sys.exit()
         self.creator.add_item_for(
             path="category/" + article_title,
             title="article_title",
