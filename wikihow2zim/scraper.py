@@ -85,6 +85,24 @@ class wikihow2zim:
 
         soup = bs4.BeautifulSoup(response.text, "html.parser")
 
+        # Get the article title
+        article_title = soup.find("div", {"class": "pre-content"}).find("h1").text
+
+        # Get the intro
+        intro = soup.find("div", {"id": "intro"}).find("div", {"id": "mf-section-0"}).text
+
+        # Get the methods/parts
+        methods = []
+
+        for node in soup.find_all("div", {"class": "steps"}):
+
+            method = {}
+            #method["number"] = 
+            method["title"] = node.find("span", {"class": "mw-headline"}).text
+            methods.append(method)
+
+        sys.exit()
+
         # article = self.env.get_template("article.html")
         # self.creator.add_item_for(
         #     path="category/" + article_title,
