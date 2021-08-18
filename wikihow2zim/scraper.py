@@ -48,6 +48,18 @@ class wikihow2zim:
             loader=FileSystemLoader(self.templates_dir), autoescape=True
         )
 
+        self.articles_list = {}  # keep track of each article processed and
+        # where each article was referenced from
+
+        self.subcat_list = {}  # keep track of each subcategory processed, and
+        # where each subcategory was referenced from
+
+        self.main_categories = [] # Keep track of all the categories' names
+        # and the link to each category
+
+        self.main_categories_articles = {} # keep track of each category
+        # and all the articles for a given category
+
     @property
     def templates_dir(self):
         return ROOT_DIR.joinpath("templates")
@@ -76,7 +88,11 @@ class wikihow2zim:
                 path=str(fpath.relative_to(ROOT_DIR)), fpath=fpath
             )
 
-    def get_article(self, article_url):
+    def get_article(self, current_category, article_url):
+
+        if (len(self.articles_list) >= 10):
+            return 1
+
         try:
             response = requests.get(article_url)
         except Exception as exc:
@@ -86,7 +102,7 @@ class wikihow2zim:
         soup = bs4.BeautifulSoup(response.text, "html.parser")
 
         # Get the article title
-        article_title = str(soup.find("div", {"class": "pre-content"}).find("h1").text).replace(" ","-")
+        article_title = str(soup.find("div", {"class": "pre-content"}).find("h1").text)
 
         # Get the intro
         intro = (
@@ -139,16 +155,21 @@ class wikihow2zim:
 
         article = self.env.get_template("article.html")
 
-        print(article.render(title=article_title, intro=intro, methods=methods))
-        sys.exit()
         self.creator.add_item_for(
-            path="category/" + article_title,
-            title="article_title",
+            path=article_title.replace(" ","-"),
+            title=article_title,
             content=article.render(title=article_title, intro=intro, methods=methods),
             mimetype="text/html",
         )
 
-    def walk_subcategories(self, main_wiki_url, cat_url, recursion_depth):
+        article_link = article_title.replace(" ","-")
+        self.main_categories_articles[current_category].append([article_title, article_link])
+
+    def walk_subcategories(self, main_wiki_url, cat_url, current_category, recursion_depth):
+
+        if (len(self.articles_list) >= 1):
+            return 1
+
         try:
             response = requests.get(cat_url)
         except Exception as exc:
@@ -161,7 +182,7 @@ class wikihow2zim:
             article_url = article_div.find("a")["href"]
             if not article_url in self.articles_list:
                 self.articles_list[article_url] = [str(recursion_depth) + " " + cat_url]
-                self.get_article(article_url)
+                self.get_article(current_category, article_url)
             else:
                 self.articles_list[article_url].append(
                     str(recursion_depth) + " " + cat_url
@@ -176,17 +197,16 @@ class wikihow2zim:
                 self.subcat_list[subcat_url].append(
                     str(recursion_depth) + " " + cat_url
                 )
-            print(str(recursion_depth) + " category " + subcat_url, flush=True)
-            self.walk_subcategories(main_wiki_url, subcat_url, recursion_depth + 1)
+            self.walk_subcategories(main_wiki_url, subcat_url, current_category, recursion_depth + 1)
 
     def walk_categories(self):
         # Get all the articles by walking through all the main categories
         # and the sub-categories
 
-        self.articles_list = {}  # keep track of each article processed and
-        # where each article was referenced from
-        self.subcat_list = {}  # keep track of each subcategory processed, and
-        # where each subcategory was referenced from
+        if (len(self.articles_list) >= 1):
+            return 1
+
+        
 
         main_wiki_url = "https://www.wikihow.com"
         sitemap_url = "https://www.wikihow.com/Special:Sitemap"
@@ -201,14 +221,35 @@ class wikihow2zim:
 
         # Find main categories
         category_divs = soup.find_all("div", {"class": "cat_list"})
-        self.main_categories = []
+        
         for div in category_divs:
             h3 = div.find("h3")
             cat_url = main_wiki_url + h3.find("a")["href"]
-            print("0 category " + cat_url, flush=True)
-            current_category = [h3.text, self.output_dir + "/C" + h3.find("a")["href"]]
-            self.main_categories.append(current_category)
-            self.walk_subcategories(main_wiki_url, cat_url, 1)
+
+            # Store the information about the title of each main category
+            # and the link to the page listing the articles of the main category
+            main_category = [h3.text, str(h3.find("a")["href"])[1:].replace(':','-')]
+            self.main_categories.append(main_category)
+
+            # Initialize the list to store the titles and links for all
+            # the articles in each category
+            self.main_categories_articles[main_category[1]] = []
+
+            # Traverse the main category subcategory and articles
+            self.walk_subcategories(main_wiki_url, cat_url, main_category[1], 1)
+
+    def add_articles_per_category_pages(self):
+        for category in self.main_categories_articles:
+            # Add content to zim file
+            template = self.env.get_template("category.html")
+            self.creator.add_item_for(
+                path=category,
+                title=category.replace("-"," "),
+                content=template.render(
+                    title=category.replace("-"," "), description=category, main_category_articles=self.main_categories_articles[category]
+                ),
+                mimetype="text/html",
+            )
 
     def add_homepage(self):
         # Add content to zim file
@@ -248,6 +289,8 @@ class wikihow2zim:
         self.add_assets()
 
         self.walk_categories()
+
+        self.add_articles_per_category_pages()
 
         self.add_homepage()
 

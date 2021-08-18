@@ -4,7 +4,7 @@
     <div class="list_main_categories">
         <h3> Categories </h3>
         {% for category in main_categories %}
-            <h4> <a href="{{category[1]}}"> {{category[0]}} </a> </h4>
+            <h4> <a href="{{ to_root }}{{ category[1] }}"> {{category[0]}} </a> </h4>
         {% endfor %}
         
     </div>
