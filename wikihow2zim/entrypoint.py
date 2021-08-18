@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 import argparse
 
@@ -17,6 +18,14 @@ def main():
         choices=URLS.keys(),
         required=True,
         help="Wikihow website to build from",
+        dest="lang_code",
+    )
+
+    parser.add_argument(
+        "--output",
+        help="Output folder for ZIM file",
+        default="/output",
+        dest="_output_dir",
     )
 
     parser.add_argument(
@@ -39,28 +48,59 @@ def main():
     )
 
     parser.add_argument(
-        "--tags",
-        help="List of comma-separated Tags for the ZIM file. "
-        "category:other and _videos:yes added automatically",
-    )
-
-    parser.add_argument(
-        "--output",
-        help="Output folder for ZIM file",
-        default="/output",
-        dest="output_dir",
-    )
-
-    parser.add_argument(
-        "--tmp-dir",
-        help="Path to create temp folder in. Used for building ZIM file. "
-        "Receives all data (storage space)",
+        "--tag",
+        help="Add tag to the ZIM file. "
+        "category:other and wikihow added automatically",
+        default=["  _category:other", "wikihow"],
+        action="append",
     )
 
     parser.add_argument(
         "--zim-file",
         help="ZIM file name (based on --name if not provided)",
         dest="fname",
+    )
+
+    parser.add_argument(
+        "--category",
+        help="Only scrape this category (option can be used multiple times). "
+        "Use the URL-ID or the Category "
+        "(after the Category: –or equivalent– in the URL",
+        dest="categories",
+        action="append",
+    )
+
+    parser.add_argument(
+        "--low-quality",
+        help="Use lower-quality, smaller file-size video encode",
+        action="store_true",
+        default=False,
+    )
+
+    parser.add_argument(
+        "--without_external_links",
+        help="Don't include external links",
+        action="store_true",
+        default=False,
+        dest="without_external_links",
+    )
+
+    parser.add_argument(
+        "--optimization-cache",
+        help="URL with credentials to S3 for using as optimization cache",
+        dest="s3_url_with_credentials",
+    )
+
+    parser.add_argument(
+        "--debug", help="Enable verbose output", action="store_true", default=False
+    )
+
+    parser.add_argument(
+        "--tmp-dir",
+        help="Path to create temp folder in. Used for building ZIM file. "
+        "Videos are stored and re-encoded there.",
+        default=os.getenv("TMPDIR", "."),
+        dest="_tmp_dir",
     )
 
     parser.add_argument(
@@ -72,34 +112,19 @@ def main():
     )
 
     parser.add_argument(
+        "--build-in-tmp",
+        help="Use --tmp-dir value as workdir. Otherwise, a unique sub-folder "
+        "is created inside it. Useful to reuse downloaded files (debug/devel)",
+        default=False,
+        action="store_true",
+        dest="build_dir_is_tmp_dir",
+    )
+
+    parser.add_argument(
         "--version",
         help="Display scraper version and exit",
         action="version",
         version=SCRAPER,
-    )
-
-    parser.add_argument(
-        "--optimization-cache",
-        help="URL with credentials to S3 for using as optimization cache",
-        dest="s3_url_with_credentials",
-    )
-
-    parser.add_argument(
-        "--low-quality",
-        help="Use lower-quality, smaller file-size video encode",
-        action="store_true",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--no-external-links",
-        help="Don't include external links",
-        action="store_true",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--debug", help="Enable verbose output", action="store_true", default=False
     )
 
     args = parser.parse_args()
