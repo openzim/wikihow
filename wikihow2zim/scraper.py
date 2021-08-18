@@ -218,7 +218,7 @@ class wikihow2zim:
             logger.critical(f"Unable to retrieve homepage at {url}: {exc}")
             logger.exception(exc)
 
-        soup = bs4.BeautifulSoup(response.text, "html.parser")
+        soup = bs4.BeautifulSoup(response.text, "lxml")
 
         # Find main categories
         category_divs = soup.find_all("div", {"class": "cat_list"})
