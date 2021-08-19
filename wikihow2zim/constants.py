@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
-import logging
 import tempfile
 import urllib.parse
 from typing import Optional, List
 from dataclasses import dataclass, field
 
-from zimscraperlib.logging import getLogger as lib_getLogger
 from zimscraperlib.i18n import get_language_details
 
 ROOT_DIR = pathlib.Path(__file__).parent
@@ -17,22 +15,7 @@ with open(ROOT_DIR.joinpath("VERSION"), "r") as fh:
     VERSION = fh.read().strip()
 
 SCRAPER = f"{NAME} {VERSION}"
-
-
-class Global:
-    debug = False
-
-
-def setDebug(debug):
-    """toggle constants global DEBUG flag (used by getLogger)"""
-    Global.debug = bool(debug)
-
-
-def getLogger():
-    """configured logger respecting DEBUG flag"""
-    return lib_getLogger(NAME, level=logging.DEBUG if Global.debug else logging.INFO)
-
-
+IMAGES_ENCODER_VERSION = 1
 URLS = {
     "en": "https://www.wikihow.com",
     "ar": "https://ar.wikihow.com",
@@ -113,8 +96,8 @@ class Conf:
         self.output_dir = pathlib.Path(self._output_dir).expanduser().resolve()
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        if self.tmp_dir:
-            self.tmp_dir.mkdir(parents=True, exist_ok=True)
+        self.tmp_dir = pathlib.Path(self._tmp_dir).expanduser().resolve()
+        self.tmp_dir.mkdir(parents=True, exist_ok=True)
         if self.build_dir_is_tmp_dir:
             self.build_dir = self.tmp_dir
         else:

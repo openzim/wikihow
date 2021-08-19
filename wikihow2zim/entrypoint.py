@@ -4,7 +4,8 @@ import os
 import sys
 import argparse
 
-from .constants import NAME, SCRAPER, URLS, setDebug, getLogger
+from .constants import NAME, SCRAPER, URLS
+from .shared import Global, logger
 
 
 def main():
@@ -128,8 +129,7 @@ def main():
     )
 
     args = parser.parse_args()
-    setDebug(args.debug)
-    logger = getLogger()
+    Global.set_debug(args.debug)
 
     from .scraper import wikihow2zim
 
