@@ -3,7 +3,7 @@ LABEL org.opencontainers.image.source https://github.com/openzim/wikihow
 
 # Install necessary packages
 RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends locales wget \
+    && apt-get install -y --no-install-recommends locales wget libmagic1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

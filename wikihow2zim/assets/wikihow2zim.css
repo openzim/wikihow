@@ -1,0 +1,66 @@
+
+/* Changing footer appearance so that the separator line takes all width
+   and footer links are aligned right on larger screen */
+@media only screen and (min-width:728px) {
+
+    .footer_divider,
+    #footer_logo,
+    #footer_crumbs {
+        grid-column: 1 / span 3
+        /*grid-column: 1 / span 3*/
+    }
+
+    #footer_links {
+        /*grid-column: 1;
+        grid-row: 5;*/
+    }
+
+}
+
+
+@media only screen and (min-width:975px) {
+
+    .footer_divider,
+    #footer_logo,
+    #footer_crumbs {
+        grid-column: span 3;
+        /*grid-column: span 2*/
+    }
+
+    #footer_links {
+        grid-column: 3 / span 1;
+        grid-row: span 2;
+        /*grid-column: 2 / span 1;
+        grid-row: span 2;*/
+    }
+
+    #footer_links ul {
+        -webkit-columns: 3;
+        -moz-columns: 3;
+        columns: 3;
+        /*-webkit-columns: 2;
+        -moz-columns: 2;
+        columns: 2;*/
+    }
+}
+
+/* outbound array icon for all external links */
+html[dir=ltr] a.external-link {
+    background-image: url(external-link-ltr-icon.svg) !important;
+    background-position: center right;
+    background-repeat: no-repeat;
+    padding-right: 13px;
+}
+html[dir=rtl] a.external-link {
+    background-image: url(external-link-rtl-icon.svg) !important;
+    background-position: center left;
+    background-repeat: no-repeat;
+    padding-left: 13px;
+}
+
+
+/* hide plus (+) icon on sub categories list as this feature requires JS.
+   its content is available inside the category linked next to the icon */
+#subcats .subcat_container .show_more {
+    display: none !important;
+}

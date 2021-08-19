@@ -1,58 +1,75 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>
-            {{title}}
-        </title>
-        <link rel="stylesheet" type="text/css" href="{{ to_root }}assets/static/base.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="{{description}}">
-    </head>
-    <body>
-        <!-- Header -->
-        <div id="header_container">
-            <div id="header" >
-                <a href="{{ to_root }}templates/base.html">
-                    <img src="{{ to_root }}assets/static/wikihow_logo.png" id="header_logo">
-                </a>
-            </div>
+<html class="client-nojs" dir="{{ dir }}" lang="{{ lang }}">
+ <head>
+    <meta charset="utf-8"/>
+    <title>{{ title }}</title>
+    <meta content="{{ description }}" name="description"/>
+    <meta content="width=device-width" name="viewport"/>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+    <meta content="#eaecf0" name="theme-color"/>
+    <link href="{{ to_root }}apple-touch-icon.png" rel="apple-touch-icon"/>
+    <link href="{{ to_root }}favicon.ico" rel="shortcut icon"/>
+{% if page_linked_styles %}
+    {% for url in page_linked_styles %}<link href="{{ to_root }}assets/{{ url|digest }}.css" rel="stylesheet" type="text/css"/><!-- page -->
+    {% endfor %}
+{% else %}
+    {% for url in linked_styles %}<link href="{{ to_root }}assets/{{ url|digest }}.css" rel="stylesheet" type="text/css"/><!-- linked -->
+    {% endfor %}
+{% endif %}
+    <link href="{{ to_root }}assets/{{ inline_digest }}.css" rel="stylesheet" type="text/css"/><!-- inline -->
+    {% if page_inline_styles %}<link href="{{ to_root }}assets/{{ page_inline_styles }}.css" rel="stylesheet" type="text/css"/><!-- inline page -->{% endif %}
+    <link href="{{ to_root }}assets/wikihow2zim.css" rel="stylesheet" type="text/css"/>
+</head>
+<body class="{% if body_classes %}{{ body_classes }}{% else %}mediawiki {{ dir }} sitedir-{{ dir }} mw-hide-empty-elt ns-0 ns-subject page-Main_Page rootpage-Main_Page stable skin-minervawh action-view{% endif %}">
+    <div class="header_container" data-responsive="1" id="header_container">
+        <div class="header" id="header" role="navigation">
+            <a href="{{ to_root }}Main-Page" id="header_logo"></a>
+            <div id="hs"></div>
         </div>
+    </div>
 
-        <div class="header_container shrunk" id="header_container_small">
-        </div>
+    <div id="mw-mf-viewport" class="{% if viewport_classes %}{{ viewport_classes }}{% endif %}">
+        <div id="mw-mf-page-left"></div>
+        <div id="mw-mf-page-center">
+            <div id="siteNotice"></div>
 
-        <!-- Article Content -->
-        <div id="content_wrapper" >
-            <div id="content_inner">
-                {% block content %}
-                    <p> Home page content goes here... </p>
-                {% endblock %}
+            <div id="content_wrapper" role="main">
+                {% block content %}{% endblock %}
             </div>
-        </div>
 
-        <!-- Footer -->
-        <div id="footer" role="navigation">
-            <div id="footer_logo_container">
-                <a href="{{ to_root }}templates/base.html">
-                    <img src="{{ to_root }}assets/static/wikihow_logo.png" id="footer_logo">
-                </a>
-            </div>
-            <div class="footer_links">
-                <a href="{{ to_root }}/help.html">
-                    Home
-                </a>
-            </div>
-            <div class="footer_links">
-                <a href="{{ to_root }}/about.html">
-                    About WikiHow
-                </a>
-            </div>
-            <div class="footer_links">
-                <a href="{{ to_root }}/experts.html">
-                    Experts
-                </a>
+            <br class="clearall"/>
+            <div id="fb-root"></div>
+            <div id="footer" role="navigation">
+                <div id="footer_inner">
+                    <a href="{{ to_root }}Main-Page" id="footer_logo">
+                        <img src="{{ to_root }}assets/logo" alt="wikiHow" width="162" height="42">
+                    </a>
+
+                    <div id="footer_crumbs"><ul class="breadcrumbs"></ul></div>
+
+                    <div id="footer_top_divider" class="footer_divider"></div>
+                    <!-- <div id="footer_vertical_divider"></div> -->
+
+                    <div id="search_footer" class="wh_search " role="search">
+                        <div class="cse_x" role="button"></div>
+                    </div>
+
+                    <div id="footer_links">
+                        <ul>
+                            <li><a href="{{ to_root }}Main-Page" class="mw-redirect" title="Main Page">Home</a></li>
+                            <li><a href="{{ to_root }}wikiHow:About-wikiHow">About wikiHow</a></li>
+                            <li><a href="{{ to_root }}Experts">Experts</a></li>
+                            <li><a href="{{ to_root }}wikiHow:Contactez-us">Contact Us</a></li>
+                            <li><a href="{{ to_root }}Special:Sitemap">Site Map</a></li>
+                            <li><a href="{{ to_root }}wikiHow:Terms-of-Use">Terms of Use</a></li>
+                            <!-- <li><a href="{{ to_root }}wikiHow:Privacy-Policy">Privacy Policy</a></li> -->
+                        </ul>
+                    </div>
+                    <div id="sf"></div>
+                </div>
+
             </div>
         </div>
-    </body>
+    </div>
+</body>
 </html>
