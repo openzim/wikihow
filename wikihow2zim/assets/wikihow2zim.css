@@ -57,3 +57,10 @@ html[dir=rtl] a.external-link {
     background-repeat: no-repeat;
     padding-left: 13px;
 }
+
+
+/* hide plus (+) icon on sub categories list as this feature requires JS.
+   its content is available inside the category linked next to the icon */
+#subcats .subcat_container .show_more {
+    display: none !important;
+}

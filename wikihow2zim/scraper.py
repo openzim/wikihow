@@ -14,11 +14,12 @@ from zimscraperlib.image.transformation import resize_image
 from .constants import Conf, ROOT_DIR
 from .shared import Global, GlobalMixin, logger
 from .utils import (
-    cat_ident_from_link,
+    cat_ident_for,
     parse_css,
     get_digest,
     get_soup,
     to_url,
+    article_ident_for,
     soup_link_finder,
     setup_s3_and_check_credentials,
 )
@@ -253,6 +254,14 @@ class wikihow2zim(GlobalMixin):
         for url in self.metadata["linked_styles"]:
             self.add_css(url)
 
+        # Categories have different CSS as well
+        soup = get_soup("/Category:wikiHow")
+        self.metadata["category_styles"] = [
+            to_url(lnk.attrs["href"]) for lnk in soup.find_all(soup_link_finder)
+        ]
+        for url in self.metadata["category_styles"]:
+            self.add_css(url)
+
         # recursively add our own assets, at a path identical to position in repo
         assets_root = pathlib.Path(ROOT_DIR.joinpath("assets"))
         for fpath in assets_root.glob("**/*"):
@@ -270,7 +279,7 @@ class wikihow2zim(GlobalMixin):
 
         soup = get_soup("/Special:Sitemap")
         self.conf.categories = [
-            cat_ident_from_link(link.attrs["href"])
+            cat_ident_for(link.attrs["href"])
             for link in soup.select("div.cat_list h3 a")
         ]
 
@@ -293,7 +302,7 @@ class wikihow2zim(GlobalMixin):
         page = self.env.get_template("home.html").render(
             to_root="./",
             body_classes=" ".join(soup.find("body").attrs.get("class", [])),
-            content=self.rewriter.rewrite(content.find().prettify(), to_root="./"),
+            content=self.rewriter.rewrite(content.decode_contents(), to_root="./"),
             page_linked_styles=linked_styles,
             title=self.conf.title,
             **self.env_context,
@@ -324,10 +333,86 @@ class wikihow2zim(GlobalMixin):
 
         logger.info(f"> Category:{category} ({recurse=})")
 
-        soup = get_soup(f"/Category:{category}")
+        articles, nb_pages, sub_categories = self.scrape_category_page(
+            category, page_num=1, recurse=recurse
+        )
+
+        if nb_pages > 1:
+            for page_num in range(2, nb_pages + 1):
+                # articles list is first item in returned tuple
+                articles.union(
+                    self.scrape_category_page(
+                        category, page_num=page_num, recurse=False
+                    )[0]
+                )
+
+        for article in articles:
+            self.scrape_article(article)
+
+        for sub_category in sub_categories or []:
+            self.scrape_category(sub_category)
+
+    def scrape_category_page(self, category: str, page_num: int, recurse: bool):
+        category_url = f"/Category:{category}"
+        if page_num > 1:
+            category_url += f"?pg={page_num}"
+            logger.info(f">> Category:{category} (page={page_num})")
+
+        soup = get_soup(category_url)
+
+        articles = set()
+        for link in soup.select("#cat_all .responsive_thumb a"):
+            articles.add(article_ident_for(link.attrs.get("href")))
+
+        nb_pages = len(soup.select("#large_pagination ul li"))
+
         if recurse:
-            for link in soup.select("div#subcats * a.cat_link"):
-                self.scrape_category(cat_ident_from_link(link.attrs["href"]), recurse)
+            sub_categories = [
+                cat_ident_for(link.attrs["href"])
+                for link in soup.select("div#subcats * a.cat_link")
+            ]
+        else:
+            sub_categories = None
+
+        # extract and clean main content
+        title = soup.find("title").string
+        content = soup.select("div#content_wrapper")[0]
+        _ = [script.decompose() for script in content.find_all("script")]
+        _ = [img.decompose() for img in content.select("noscript > img")]
+        _ = [noscript.decompose() for noscript in content.select("noscript:empty")]
+
+        #
+        path = f"Category:{category}"
+        if page_num > 1:
+            path += f"_pg={page_num}"
+        # some categories include a `/`. ex: Système-Macintosh/Apple
+        to_root = "./" + ("../" * path.count("/"))
+        page = self.env.get_template("category.html").render(
+            to_root="./",
+            body_classes=" ".join(soup.find("body").attrs.get("class", [])),
+            content=self.rewriter.rewrite(content.decode_contents(), to_root=to_root),
+            page_linked_styles=self.metadata["category_styles"],
+            title=title,
+            **self.env_context,
+        )
+        with self.lock:
+            self.creator.add_item_for(
+                path=path,
+                title=title,
+                content=page,
+                mimetype="text/html",
+            )
+
+        return articles, nb_pages, sub_categories
+
+    def scrape_article(self, article):
+        if article in self.articles:
+            return
+        self.articles.add(article)
+
+        logger.info(f"ARTICLE: {article}")
+
+        # soup = get_soup(article)
 
     def run(self):
         s3_storage = (
@@ -347,7 +432,7 @@ class wikihow2zim(GlobalMixin):
         logger.info(
             f"Starting scraper with:\n"
             f"  language: {self.conf.language['english']}"
-            f" ({self.conf.main_url.netloc})\n"
+            f" ({self.conf.domain})\n"
             f"  output_dir: {self.conf.output_dir}\n"
             f"  build_dir: {self.build_dir}\n"
             f"  categories: "
@@ -381,7 +466,8 @@ class wikihow2zim(GlobalMixin):
             self.scrape_categories()
             logger.info(
                 f"Stats: {len(self.categories)} categories, "
-                f"{len(self.articles)} articles"
+                f"{len(self.articles)} articles, "
+                f"{self.imager.nb_requested} images"
             )
 
             logger.info("Awaiting images")

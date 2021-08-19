@@ -27,6 +27,14 @@ def to_url(value: str) -> str:
     return value if value.startswith("http") else get_url(value)
 
 
+def to_rel(url: str) -> Union[None, str]:
+    """path from URL if on our main domain, else None"""
+    uri = urllib.parse.urlparse(url)
+    if uri.netloc != Global.conf.domain:
+        return None
+    return uri.path
+
+
 def fetch(path: str) -> str:
     """source text of a path from source website"""
     resp = requests.get(url=get_url(path))
@@ -53,14 +61,19 @@ def get_digest(url: str) -> str:
     return str(zlib.adler32(url.encode("UTF-8")))
 
 
-def cat_ident_from_link(href: str) -> str:
+def cat_ident_for(href: str) -> str:
     """decoded name of a category from a link target"""
-    return normalize_category(href.split(":", 1)[1])
+    return normalize_ident(href.split(":", 1)[1])
 
 
-def normalize_category(ident: str) -> str:
+def normalize_ident(ident: str) -> str:
     """URL-decoded category identifier"""
     return urllib.parse.unquote(ident)
+
+
+def article_ident_for(href: str) -> str:
+    """decoded name of an article from a link target"""
+    return normalize_ident(to_rel(href))[1:]
 
 
 def parse_css(style: str) -> Tuple[str, List[Tuple[str, str]]]:

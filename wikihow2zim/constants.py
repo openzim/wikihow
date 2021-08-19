@@ -46,10 +46,12 @@ class Conf:
         "output_dir",
     ]
 
-    lang_code: str
+    lang_code: str = ""
+    language: dict = field(default_factory=dict)
+    main_url: str = ""
 
     # zim params
-    name: str
+    name: str = ""
     title: Optional[str] = ""
     description: Optional[str] = ""
     author: Optional[str] = ""
@@ -87,6 +89,10 @@ class Conf:
         return urllib.parse.urlparse(URLS[lang_code])
 
     @property
+    def domain(self):
+        return self.main_url.netloc
+
+    @property
     def s3_url(self):
         return self.s3_url_with_credentials
 
@@ -102,7 +108,7 @@ class Conf:
             self.build_dir = self.tmp_dir
         else:
             self.build_dir = pathlib.Path(
-                tempfile.mkdtemp(prefix=f"{self.main_url.netloc}_", dir=self.tmp_dir)
+                tempfile.mkdtemp(prefix=f"{self.domain}_", dir=self.tmp_dir)
             )
 
         if self.stats_filename:

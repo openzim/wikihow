@@ -1,12 +1,5 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="list_main_categories">
-        <h3> {{ title }} </h3>
-        {% for article in main_category_articles %}
-            <h4> <a href="{{ to_root }}{{ article[1] }}"> {{article[0]}} </a> </h4>
-        {% endfor %}
-        
-    </div>
-
+    {{ content|safe }}
 {% endblock %}

@@ -22,11 +22,7 @@ def is_in_code(elem):
 
 class Rewriter(GlobalMixin):
     def __init__(self):
-        self.domain_re = re.compile(rf"https?://{self.domain}(?P<path>/.+)")
-
-    @property
-    def domain(self):
-        return self.conf.main_url.netloc
+        self.domain_re = re.compile(rf"https?://{self.conf.domain}(?P<path>/.+)")
 
     def rewrite(self, content: str, to_root: str = "", unwrap: bool = False):
         if not content:
@@ -39,6 +35,9 @@ class Rewriter(GlobalMixin):
             return content
         if not soup:
             return ""
+
+        for attr in ("body", "html"):
+            getattr(soup, attr).unwrap()
 
         self.rewrite_links(soup, to_root)
 
@@ -115,9 +114,17 @@ class Rewriter(GlobalMixin):
         ).geturl()
 
     def rewrite_images(self, soup, to_root):
-        for img in soup.find_all("img", src=True):
-            if not img.get("src"):
+        for img in soup.find_all("img"):
+            if not img.get("src") and not img.get("data-src"):
                 continue
+
+            if img.get("data-src") and not img.get("src"):
+                img["src"] = img["data-src"]
+                del img["data-src"]
+                try:
+                    del img["data-src-nowebp"]
+                except KeyError:
+                    pass
 
             # skip links inside <code /> nodes
             if is_in_code(img):
