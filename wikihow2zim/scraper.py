@@ -262,6 +262,19 @@ class wikihow2zim(GlobalMixin):
         for url in self.metadata["category_styles"]:
             self.add_css(url)
 
+        # Articles have different CSS as well
+        soup = get_soup("/Talk-to-Your-Crush-if-You're-Both-Shy")
+        self.metadata["article_styles"] = [
+            to_url(lnk.attrs["href"]) for lnk in soup.find_all(soup_link_finder)
+        ]
+        for url in self.metadata["article_styles"]:
+            self.add_css(url)
+        # Articles have a custom inline CSS
+        self.metadata["article_inline_digest"] = self.add_css(
+            "\n".join([style.string for style in soup.find_all("style", src=False)]),
+            inline=True,
+        )
+
         # recursively add our own assets, at a path identical to position in repo
         assets_root = pathlib.Path(ROOT_DIR.joinpath("assets"))
         for fpath in assets_root.glob("**/*"):
@@ -304,6 +317,9 @@ class wikihow2zim(GlobalMixin):
             body_classes=" ".join(soup.find("body").attrs.get("class", [])),
             content=self.rewriter.rewrite(content.decode_contents(), to_root="./"),
             page_linked_styles=linked_styles,
+            viewport_classes=" ".join(
+                soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
+            ),
             title=self.conf.title,
             **self.env_context,
         )
@@ -377,9 +393,10 @@ class wikihow2zim(GlobalMixin):
         # extract and clean main content
         title = soup.find("title").string
         content = soup.select("div#content_wrapper")[0]
-        _ = [script.decompose() for script in content.find_all("script")]
-        _ = [img.decompose() for img in content.select("noscript > img")]
-        _ = [noscript.decompose() for noscript in content.select("noscript:empty")]
+        _ = [elem.decompose() for elem in content.find_all("script")]
+        _ = [elem.decompose() for elem in content.select("noscript > img")]
+        _ = [elem.decompose() for elem in content.select("noscript:empty")]
+        _ = [elem.decompose() for elem in content.select("#cat_wca")]
 
         #
         path = f"Category:{category}"
@@ -388,10 +405,13 @@ class wikihow2zim(GlobalMixin):
         # some categories include a `/`. ex: Système-Macintosh/Apple
         to_root = "./" + ("../" * path.count("/"))
         page = self.env.get_template("category.html").render(
-            to_root="./",
+            to_root=to_root,
             body_classes=" ".join(soup.find("body").attrs.get("class", [])),
             content=self.rewriter.rewrite(content.decode_contents(), to_root=to_root),
             page_linked_styles=self.metadata["category_styles"],
+            viewport_classes=" ".join(
+                soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
+            ),
             title=title,
             **self.env_context,
         )
@@ -410,9 +430,51 @@ class wikihow2zim(GlobalMixin):
             return
         self.articles.add(article)
 
-        logger.info(f"ARTICLE: {article}")
+        logger.info(f">> Article:{article}")
 
-        # soup = get_soup(article)
+        soup = get_soup(f"/{article}")
+
+        # extract and clean main content
+        title = soup.find("title").string
+        content = soup.select("div#content_wrapper")[0]
+        _ = [elem.decompose() for elem in content.find_all("script")]
+        _ = [elem.decompose() for elem in content.select(".pdf_link")]
+        _ = [elem.decompose() for elem in content.select("#side_follow")]
+        _ = [elem.decompose() for elem in content.select("#sidebar_share")]
+        _ = [elem.decompose() for elem in content.select("#other_languages")]
+        _ = [elem.decompose() for elem in content.select("#article_rating_mobile")]
+        _ = [elem.decompose() for elem in content.select("#end_options")]
+        _ = [
+            elem.decompose()
+            for elem in content.select(
+                ".wh_ad_inner, .wh_ad_active, [data-service=adsense], .wh_ad_spacing"
+            )
+        ]
+
+        # _ = [img.decompose() for img in content.select("noscript > img")]
+        # _ = [noscript.decompose() for noscript in content.select("noscript:empty")]
+
+        # some articles include a `/`. ex: Système-Macintosh/Apple
+        to_root = "./" + ("../" * article.count("/"))
+        page = self.env.get_template("article.html").render(
+            to_root=to_root,
+            body_classes=" ".join(soup.find("body").attrs.get("class", [])),
+            content=self.rewriter.rewrite(content.decode_contents(), to_root=to_root),
+            page_linked_styles=self.metadata["article_styles"],
+            # page_inline_styles=self.metadata["article_inline_digest"],
+            viewport_classes=" ".join(
+                soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
+            ),
+            title=title,
+            **self.env_context,
+        )
+        with self.lock:
+            self.creator.add_item_for(
+                path=article,
+                title=title,
+                content=page,
+                mimetype="text/html",
+            )
 
     def run(self):
         s3_storage = (

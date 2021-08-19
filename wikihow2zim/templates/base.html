@@ -17,6 +17,7 @@
     {% endfor %}
 {% endif %}
     <link href="{{ to_root }}assets/{{ inline_digest }}.css" rel="stylesheet" type="text/css"/><!-- inline -->
+    {% if page_inline_styles %}<link href="{{ to_root }}assets/{{ page_inline_styles }}.css" rel="stylesheet" type="text/css"/><!-- inline page -->{% endif %}
     <link href="{{ to_root }}assets/wikihow2zim.css" rel="stylesheet" type="text/css"/>
 </head>
 <body class="{% if body_classes %}{{ body_classes }}{% else %}mediawiki {{ dir }} sitedir-{{ dir }} mw-hide-empty-elt ns-0 ns-subject page-Main_Page rootpage-Main_Page stable skin-minervawh action-view{% endif %}">
@@ -27,7 +28,7 @@
         </div>
     </div>
 
-    <div id="mw-mf-viewport" class="no_sidebar">
+    <div id="mw-mf-viewport" class="{% if viewport_classes %}{{ viewport_classes }}{% endif %}">
         <div id="mw-mf-page-left"></div>
         <div id="mw-mf-page-center">
             <div id="siteNotice"></div>
