@@ -263,7 +263,7 @@ class wikihow2zim(GlobalMixin):
             self.add_css(url)
 
         # Articles have different CSS as well
-        soup = get_soup("/Talk-to-Your-Crush-if-You're-Both-Shy")
+        soup = get_soup("/wikihow:about-wikiHow")
         self.metadata["article_styles"] = [
             to_url(lnk.attrs["href"]) for lnk in soup.find_all(soup_link_finder)
         ]
