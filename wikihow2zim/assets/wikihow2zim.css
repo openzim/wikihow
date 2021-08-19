@@ -64,3 +64,13 @@ html[dir=rtl] a.external-link {
 #subcats .subcat_container .show_more {
     display: none !important;
 }
+
+
+/* kiwix-serve hack to work around kiwix-serve's task-bar */
+.kiwix + #header_container {
+    top: 37px;
+}
+
+.kiwix #kiwixtoolbar button {
+    color:  black;
+}
