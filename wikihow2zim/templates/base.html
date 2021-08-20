@@ -23,7 +23,7 @@
 <body class="{% if body_classes %}{{ body_classes }}{% else %}mediawiki {{ dir }} sitedir-{{ dir }} mw-hide-empty-elt ns-0 ns-subject page-Main_Page rootpage-Main_Page stable skin-minervawh action-view{% endif %}">
     <div class="header_container" data-responsive="1" id="header_container">
         <div class="header" id="header" role="navigation">
-            <a href="{{ to_root }}Main-Page" id="header_logo"></a>
+            <a href="{{ to_root }}{{ homepage_name }}" id="header_logo"></a>
             <div id="hs"></div>
         </div>
     </div>
@@ -41,7 +41,7 @@
             <div id="fb-root"></div>
             <div id="footer" role="navigation">
                 <div id="footer_inner">
-                    <a href="{{ to_root }}Main-Page" id="footer_logo">
+                    <a href="{{ to_root }}{{ homepage_name }}" id="footer_logo">
                         <img src="{{ to_root }}assets/logo" alt="wikiHow" width="162" height="42">
                     </a>
 
@@ -56,7 +56,7 @@
 
                     <div id="footer_links">
                         <ul>
-                            <li><a href="{{ to_root }}Main-Page" class="mw-redirect" title="Main Page">Home</a></li>
+                            <li><a href="{{ to_root }}{{ homepage_name }}" class="mw-redirect" title="Main Page">Home</a></li>
                             <li><a href="{{ to_root }}wikiHow:About-wikiHow">About wikiHow</a></li>
                             <li><a href="{{ to_root }}Experts">Experts</a></li>
                             <li><a href="{{ to_root }}wikiHow:Contactez-us">Contact Us</a></li>

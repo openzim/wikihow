@@ -10,7 +10,7 @@ import threading
 from zimscraperlib.logging import getLogger as lib_getLogger
 from zimscraperlib.zim.creator import Creator
 
-from .constants import NAME
+from .constants import DEFAULT_HOMEPAGE, NAME
 
 
 class Global:
@@ -65,7 +65,7 @@ class Global:
 
         Global.creator = Creator(
             filename=Global.conf.output_dir.joinpath(Global.conf.fname),
-            main_path="Main-Page",
+            main_path=DEFAULT_HOMEPAGE,
             favicon_path="illustration",
             language=Global.conf.language["iso-639-3"],
             title=Global.conf.title,

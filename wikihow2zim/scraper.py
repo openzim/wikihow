@@ -11,13 +11,14 @@ from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.inputs import handle_user_provided_file
 from zimscraperlib.zim.items import URLItem
 
-from .constants import ROOT_DIR, Conf
+from .constants import DEFAULT_HOMEPAGE, ROOT_DIR, Conf
 from .shared import Global, GlobalMixin, logger
 from .utils import (
     article_ident_for,
     cat_ident_for,
     get_digest,
     get_soup,
+    normalize_ident,
     parse_css,
     setup_s3_and_check_credentials,
     soup_link_finder,
@@ -80,6 +81,14 @@ class wikihow2zim(GlobalMixin):
 
         return {
             "dir": soup.find("html").attrs["dir"],
+            "category_prefix": normalize_ident(
+                soup.select("#hp_categories_list a")[0]
+                .attrs.get("href")
+                .split(":", 1)[0][1:]
+            ),
+            "homepage_name": soup.select("a#header_logo")[0]
+            .attrs.get("href")
+            .replace("/", ""),
             "title": soup.find("title").string,
             "description": soup.find("meta", attrs={"name": "description"}).attrs.get(
                 "content"
@@ -325,11 +334,15 @@ class wikihow2zim(GlobalMixin):
         )
         with self.lock:
             self.creator.add_item_for(
-                path="Main-Page",
+                path=self.metadata["homepage_name"],
                 title=self.conf.title,
                 content=page,
                 mimetype="text/html",
             )
+            if DEFAULT_HOMEPAGE != self.metadata["homepage_name"]:
+                self.creator.add_redirect(
+                    DEFAULT_HOMEPAGE, self.metadata["homepage_name"]
+                )
 
     def scrape_categories(self):
         logger.info("Starting scraping from categories")
@@ -369,7 +382,8 @@ class wikihow2zim(GlobalMixin):
             self.scrape_category(sub_category)
 
     def scrape_category_page(self, category: str, page_num: int, recurse: bool):
-        category_url = f"/Category:{category}"
+
+        category_url = f"/{self.metadata['category_prefix']}:{category}"
         if page_num > 1:
             category_url += f"?pg={page_num}"
             logger.info(f">> Category:{category} (page={page_num})")
@@ -399,7 +413,7 @@ class wikihow2zim(GlobalMixin):
         _ = [elem.decompose() for elem in content.select("#cat_wca")]
 
         #
-        path = f"Category:{category}"
+        path = f"{self.metadata['category_prefix']}:{category}"
         if page_num > 1:
             path += f"_pg={page_num}"
         # some categories include a `/`. ex: Système-Macintosh/Apple
@@ -503,6 +517,10 @@ class wikihow2zim(GlobalMixin):
         )
 
         self.metadata = self.get_online_metadata()
+        logger.debug(
+            f"homepage_name : {self.metadata['homepage_name']}\n"
+            f"category_prefix : {self.metadata['category_prefix']}"
+        )
         self.sanitize_inputs()
 
         logger.debug("Starting Zim creation")
@@ -518,6 +536,7 @@ class wikihow2zim(GlobalMixin):
                     "lang": self.conf.lang_code,
                     "linked_styles": self.metadata["linked_styles"],
                     "inline_digest": self.metadata["inline_digest"],
+                    "homepage_name": self.metadata["homepage_name"],
                 }
             )
 
