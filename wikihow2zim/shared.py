@@ -4,11 +4,11 @@
 # pylint: disable=cyclic-import
 
 import datetime
-import threading
 import logging
+import threading
 
-from zimscraperlib.zim.creator import Creator
 from zimscraperlib.logging import getLogger as lib_getLogger
+from zimscraperlib.zim.creator import Creator
 
 from .constants import NAME
 

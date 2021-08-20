@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
+
 from setuptools import setup
 
 root_dir = pathlib.Path(__file__).parent

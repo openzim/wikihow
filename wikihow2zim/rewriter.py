@@ -6,7 +6,7 @@ import urllib.parse
 
 import bs4
 
-from .shared import logger, GlobalMixin
+from .shared import GlobalMixin, logger
 from .utils import rebuild_uri
 
 

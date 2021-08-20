@@ -3,8 +3,8 @@
 import pathlib
 import tempfile
 import urllib.parse
-from typing import Optional, List
 from dataclasses import dataclass, field
+from typing import List, Optional
 
 from zimscraperlib.i18n import get_language_details
 

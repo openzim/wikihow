@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import argparse
 import os
 import sys
-import argparse
 
 from .constants import NAME, SCRAPER, URLS
 from .shared import Global, logger

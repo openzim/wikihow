@@ -3,15 +3,15 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import io
-import zlib
 import urllib.parse
-from typing import Union, Iterable, List, Tuple
+import zlib
+from typing import Iterable, List, Tuple, Union
 
 import bs4
-import requests
 import cssbeautifier
-from pif import get_public_ip
+import requests
 from kiwixstorage import KiwixStorage
+from pif import get_public_ip
 from zimscraperlib.download import stream_file
 
 from .shared import Global, logger

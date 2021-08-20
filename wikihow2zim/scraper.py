@@ -1,28 +1,21 @@
 # -*- coding: utf-8 -*-
 
-import shutil
-import pathlib
-import requests
 import datetime
+import pathlib
+import shutil
 
+import requests
 from jinja2 import Environment, FileSystemLoader
-from zimscraperlib.zim.items import URLItem
-from zimscraperlib.inputs import handle_user_provided_file
 from zimscraperlib.image.convertion import convert_image
 from zimscraperlib.image.transformation import resize_image
+from zimscraperlib.inputs import handle_user_provided_file
+from zimscraperlib.zim.items import URLItem
 
-from .constants import Conf, ROOT_DIR
+from .constants import ROOT_DIR, Conf
 from .shared import Global, GlobalMixin, logger
-from .utils import (
-    cat_ident_for,
-    parse_css,
-    get_digest,
-    get_soup,
-    to_url,
-    article_ident_for,
-    soup_link_finder,
-    setup_s3_and_check_credentials,
-)
+from .utils import (article_ident_for, cat_ident_for, get_digest, get_soup,
+                    parse_css, setup_s3_and_check_credentials,
+                    soup_link_finder, to_url)
 
 
 class wikihow2zim(GlobalMixin):

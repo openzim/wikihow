@@ -3,19 +3,19 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import io
-import re
 import pathlib
+import re
 import urllib.parse
 from typing import Optional
 
+from kiwixstorage import KiwixStorage, NotFoundError
 from PIL import Image
 from zimscraperlib.download import stream_file
 from zimscraperlib.image.optimization import optimize_webp
-from kiwixstorage import KiwixStorage, NotFoundError
 
-from .shared import Global
 from .constants import IMAGES_ENCODER_VERSION
-from .utils import to_url, get_digest, get_version_ident_for
+from .shared import Global
+from .utils import get_digest, get_version_ident_for, to_url
 
 logger = Global.logger
 
