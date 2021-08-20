@@ -1,0 +1,13 @@
+name: Docker
+
+on:
+  on: [push, pull_request]
+
+jobs:
+  build-and-push:
+    name: Deploy Docker Image
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Python style check
+        uses: bulv1ne/python-style-check@v0.3

@@ -13,9 +13,16 @@ from zimscraperlib.zim.items import URLItem
 
 from .constants import ROOT_DIR, Conf
 from .shared import Global, GlobalMixin, logger
-from .utils import (article_ident_for, cat_ident_for, get_digest, get_soup,
-                    parse_css, setup_s3_and_check_credentials,
-                    soup_link_finder, to_url)
+from .utils import (
+    article_ident_for,
+    cat_ident_for,
+    get_digest,
+    get_soup,
+    parse_css,
+    setup_s3_and_check_credentials,
+    soup_link_finder,
+    to_url,
+)
 
 
 class wikihow2zim(GlobalMixin):
