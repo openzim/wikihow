@@ -132,7 +132,7 @@ class wikihow2zim(GlobalMixin):
         self.conf.author = self.conf.author.strip()
 
         if not self.conf.publisher:
-            self.conf.publisher = "Openzim"
+            self.conf.publisher = "openZIM"
         self.conf.publisher = self.conf.publisher.strip()
 
         self.conf.tags = list(set(self.conf.tag + ["_category:other", "wikihow"]))

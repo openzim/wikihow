@@ -83,6 +83,7 @@ class Conf:
     build_dir_is_tmp_dir: Optional[bool] = False
     keep_build_dir: Optional[bool] = False
     debug: Optional[bool] = False
+    delay: Optional[float] = 0
     stats_filename: Optional[str] = None
 
     @staticmethod
@@ -115,3 +116,10 @@ class Conf:
         if self.stats_filename:
             self.stats_filename = pathlib.Path(self.stats_filename).expanduser()
             self.stats_filename.parent.mkdir(parents=True, exist_ok=True)
+
+        # support semi-colon separated tags as well
+        if self.tag:
+            for tag in self.tag.copy():
+                if ";" in tag:
+                    self.tag += [p.strip() for p in tag.split(";")]
+                    self.tag.remove(tag)

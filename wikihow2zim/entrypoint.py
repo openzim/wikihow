@@ -18,7 +18,7 @@ def main():
         "--language",
         choices=URLS.keys(),
         required=True,
-        help="Wikihow website to build from",
+        help="wikiHow website to build from",
         dest="lang_code",
     )
 
@@ -31,7 +31,8 @@ def main():
 
     parser.add_argument(
         "--name",
-        help="ZIM name. Used as identifier and filename (date will be appended)",
+        help="ZIM name. Used as identifier and filename (date will be appended). "
+        "Constructed from language if not supplied",
     )
 
     parser.add_argument(
@@ -45,14 +46,26 @@ def main():
     )
 
     parser.add_argument(
-        "--publisher", help="Custom publisher name (ZIM metadata). “OpenZIM” otherwise"
+        "--icon",
+        help="Custom icon for your ZIM (path or URL). " "wikiHow square logo otherwise",
+    )
+
+    parser.add_argument(
+        "--creator",
+        help="Name of content creator. “wikiHow” otherwise",
+        dest="author",
+    )
+
+    parser.add_argument(
+        "--publisher", help="Custom publisher name (ZIM metadata). “openZIM” otherwise"
     )
 
     parser.add_argument(
         "--tag",
         help="Add tag to the ZIM file. "
-        "category:other and wikihow added automatically",
-        default=["  _category:other", "wikihow"],
+        "category:other and wikihow added automatically. Use --tag several times or "
+        "separate with `;`",
+        default=["_category:other", "wikihow"],
         action="append",
     )
 
@@ -64,9 +77,10 @@ def main():
 
     parser.add_argument(
         "--category",
-        help="Only scrape this category (option can be used multiple times). "
-        "Use the URL-ID or the Category "
-        "(after the Category: –or equivalent– in the URL",
+        help="Only scrape this category (can be specified multiple times). "
+        "Use URL-ID of the Category "
+        "(after the colon `:` in the URL). "
+        "Add a slash after Category to request it without recursion",
         dest="categories",
         action="append",
     )
@@ -79,7 +93,7 @@ def main():
     )
 
     parser.add_argument(
-        "--without_external_links",
+        "--without-external-links",
         help="Don't include external links",
         action="store_true",
         default=False,
@@ -119,6 +133,19 @@ def main():
         default=False,
         action="store_true",
         dest="build_dir_is_tmp_dir",
+    )
+
+    parser.add_argument(
+        "--delay",
+        help="Add this delay (seconds) before each request to please "
+        "wikiHow servers. Can be fractions. Defaults to 0: no delay",
+        type=float,
+    )
+
+    parser.add_argument(
+        "--stats-filename",
+        help="Path to store the progress JSON file to.",
+        dest="stats_filename",
     )
 
     parser.add_argument(
