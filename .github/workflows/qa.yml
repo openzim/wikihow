@@ -25,12 +25,12 @@ jobs:
 
       - name: Check flake8 linting
         run: |
-          pip install flake8==3.8.3
+          pip install flake8==3.9.2
           flake8 --version
           flake8 . --count --max-line-length=$MAX_LINE_LENGTH --statistics
 
       - name: Check import order with isort
         run: |
-          pip install isort==5.5.3
+          pip install isort==5.9.3
           isort --version
           isort --profile black --check .
