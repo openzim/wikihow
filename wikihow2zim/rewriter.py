@@ -55,6 +55,10 @@ class Rewriter(GlobalMixin):
                 del link["href"]
                 continue
 
+            # Ignore reference links on the page
+            if link["href"].startswith("#"):
+                continue
+
             # skip links inside <code /> nodes
             if is_in_code(link):
                 continue
