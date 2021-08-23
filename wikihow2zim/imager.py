@@ -42,7 +42,7 @@ class Imager:
         src, webp = io.BytesIO(), io.BytesIO()
         stream_file(url=url, byte_stream=src)
 
-        if pathlib.Path(url).suffix == ".svg":
+        if pathlib.Path(url).suffix == ".svg" or "/math/render/svg/" in url:
             return src
 
         with Image.open(src) as img:
@@ -78,13 +78,10 @@ class Imager:
             logger.warning(f"Not supporting image URL `{url.geturl()}`. Skipping")
             return
 
-        # we won't convert svg to webp so let's keep a different suffix
-        ext = "svg" if pathlib.Path(url.path).suffix == ".svg" else "webp"
-
         # skip processing if we already processed it or have it in pipe
         digest = get_digest(url.geturl())
         if path is None:
-            path = f"images/{digest}.{ext}"
+            path = f"images/{digest}"
 
         if digest in self.handled:
             logger.debug(f"URL `{url.geturl()}` already processed.")
@@ -114,18 +111,12 @@ class Imager:
         if self.aborted:
             return
 
-        # we have two different image formats
-        mimetype = (
-            "image/svg+xml" if pathlib.Path(url.path).suffix == ".svg" else "image/webp"
-        )
-
         # just download, optimize and add to ZIM if not using S3
         if not Global.conf.s3_url:
             with Global.lock:
                 Global.creator.add_item_for(
                     path=path,
                     content=self.get_image_data(url.geturl()).getvalue(),
-                    mimetype=mimetype,
                     callback=self.once_done,
                 )
             return path
@@ -157,7 +148,6 @@ class Imager:
                 Global.creator.add_item_for(
                     path=path,
                     content=fileobj.getvalue(),
-                    mimetype=mimetype,
                     callback=self.once_done,
                 )
             return path
@@ -174,7 +164,6 @@ class Imager:
             Global.creator.add_item_for(
                 path=path,
                 content=fileobj.getvalue(),
-                mimetype=mimetype,
                 callback=self.once_done,
             )
 
