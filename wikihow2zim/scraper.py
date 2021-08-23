@@ -390,6 +390,10 @@ class wikihow2zim(GlobalMixin):
 
         soup = get_soup(category_url)
 
+        # Find and replace ?pg= to _pg= in pagination
+        for a in soup.select("#large_pagination a[href]"):
+            a["href"] = a["href"].replace("?pg=", "_pg=")
+
         articles = set()
         for link in soup.select("#cat_all .responsive_thumb a"):
             articles.add(article_ident_for(link.attrs.get("href")))
