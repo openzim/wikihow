@@ -466,9 +466,8 @@ class wikihow2zim(GlobalMixin):
                 ".wh_ad_inner, .wh_ad_active, [data-service=adsense], .wh_ad_spacing"
             )
         ]
-
-        # _ = [img.decompose() for img in content.select("noscript > img")]
-        # _ = [noscript.decompose() for noscript in content.select("noscript:empty")]
+        _ = [elem.decompose() for elem in content.select("noscript > img")]
+        _ = [elem.decompose() for elem in content.select("noscript:empty")]
 
         # some articles include a `/`. ex: Système-Macintosh/Apple
         to_root = "./" + ("../" * article.count("/"))
