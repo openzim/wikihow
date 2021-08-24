@@ -19,7 +19,7 @@ from .shared import Global, logger
 
 def get_url(path: str) -> str:
     """in-source website url for a path"""
-    return f"{Global.conf.main_url.geturl()}{path}"
+    return f"{Global.conf.main_url.geturl()}{urllib.parse.quote(path)}"
 
 
 def to_url(value: str) -> str:
