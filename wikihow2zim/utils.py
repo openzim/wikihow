@@ -37,9 +37,9 @@ def to_rel(url: str) -> Union[None, str]:
 
 def fetch(path: str) -> str:
     """source text of a path from source website"""
-    steam = io.BytesIO()
-    stream_file(url=get_url(path), byte_stream=steam)
-    return steam.getvalue().decode("UTF-8")
+    stream = io.BytesIO()
+    stream_file(url=get_url(path), byte_stream=stream)
+    return stream.getvalue().decode("UTF-8")
 
 
 def get_soup(path: str) -> bs4.BeautifulSoup:
