@@ -17,14 +17,20 @@ from zimscraperlib.download import stream_file
 from .shared import Global, logger
 
 
-def get_url(path: str) -> str:
-    """in-source website url for a path"""
-    return f"{Global.conf.main_url.geturl()}{urllib.parse.quote(path)}"
+def get_url(path: str, **params) -> str:
+    """url-encoded in-source website url for a path"""
+    params_str = f"?{urllib.parse.urlencode(params)}" if params else ""
+    return f"{Global.conf.main_url.geturl()}{urllib.parse.quote(path)}{params_str}"
+
+
+def get_url_raw(path: str):
+    """in-source website url for a path, untainted"""
+    return f"{Global.conf.main_url.geturl()}{path}"
 
 
 def to_url(value: str) -> str:
     """resolved potentially relative url from in-source link"""
-    return value if value.startswith("http") else get_url(value)
+    return value if value.startswith("http") else get_url_raw(value)
 
 
 def to_rel(url: str) -> Union[None, str]:
@@ -35,16 +41,16 @@ def to_rel(url: str) -> Union[None, str]:
     return uri.path
 
 
-def fetch(path: str) -> str:
+def fetch(path: str, **params) -> str:
     """source text of a path from source website"""
     stream = io.BytesIO()
-    stream_file(url=get_url(path), byte_stream=stream)
+    stream_file(url=get_url(path, **params), byte_stream=stream)
     return stream.getvalue().decode("UTF-8")
 
 
-def get_soup(path: str) -> bs4.BeautifulSoup:
+def get_soup(path: str, **params) -> bs4.BeautifulSoup:
     """an lxml soup of a path on source website"""
-    return bs4.BeautifulSoup(fetch(path), "lxml")
+    return bs4.BeautifulSoup(fetch(path, **params), "lxml")
 
 
 def soup_link_finder(elem: bs4.element.Tag) -> bool:

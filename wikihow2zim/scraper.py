@@ -385,10 +385,9 @@ class wikihow2zim(GlobalMixin):
 
         category_url = f"/{self.metadata['category_prefix']}:{category}"
         if page_num > 1:
-            category_url += f"?pg={page_num}"
             logger.info(f">> Category:{category} (page={page_num})")
 
-        soup = get_soup(category_url)
+        soup = get_soup(category_url, pg=page_num)
 
         # Find and replace ?pg= to _pg= in pagination
         for a in soup.select("#large_pagination a[href]"):
