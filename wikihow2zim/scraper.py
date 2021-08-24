@@ -333,6 +333,7 @@ class wikihow2zim(GlobalMixin):
                 title=self.conf.title,
                 content=page,
                 mimetype="text/html",
+                is_front=True,
             )
             if DEFAULT_HOMEPAGE != self.metadata["homepage_name"]:
                 self.creator.add_redirect(
@@ -433,6 +434,7 @@ class wikihow2zim(GlobalMixin):
                 title=title,
                 content=page,
                 mimetype="text/html",
+                is_front=True,
             )
 
         return articles, nb_pages, sub_categories
@@ -486,6 +488,7 @@ class wikihow2zim(GlobalMixin):
                 title=title,
                 content=page,
                 mimetype="text/html",
+                is_front=True,
             )
 
     def run(self):
