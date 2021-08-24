@@ -64,6 +64,15 @@ class wikihow2zim(GlobalMixin):
             logger.debug(f"Removing {self.build_dir}")
             shutil.rmtree(self.build_dir, ignore_errors=True)
 
+    def get_style_urls(self, soup) -> object:
+        """paths list of found CSS link content+resources appended to ZIM"""
+        list_css = [
+            to_url(lnk.attrs["href"]) for lnk in soup.find_all(soup_link_finder)
+        ]
+        for url in list_css:
+            self.add_css(url)
+        return list_css
+
     def get_online_metadata(self):
         """metadata from online website, looking at homepage source code"""
         logger.debug("Fecthing website metdata")
@@ -263,22 +272,8 @@ class wikihow2zim(GlobalMixin):
         for url in self.metadata["linked_styles"]:
             self.add_css(url)
 
-        # Categories have different CSS as well
-        soup = get_soup("/Category:wikiHow")
-        self.metadata["category_styles"] = [
-            to_url(lnk.attrs["href"]) for lnk in soup.find_all(soup_link_finder)
-        ]
-        for url in self.metadata["category_styles"]:
-            self.add_css(url)
-
-        # Articles have different CSS as well
-        soup = get_soup("/wikihow:About-wikiHow")
-        self.metadata["article_styles"] = [
-            to_url(lnk.attrs["href"]) for lnk in soup.find_all(soup_link_finder)
-        ]
-        for url in self.metadata["article_styles"]:
-            self.add_css(url)
         # Articles have a custom inline CSS
+        soup = get_soup("/wikihow:About-wikiHow")
         self.metadata["article_inline_digest"] = self.add_css(
             "\n".join([style.string for style in soup.find_all("style", src=False)]),
             inline=True,
@@ -338,6 +333,7 @@ class wikihow2zim(GlobalMixin):
                 title=self.conf.title,
                 content=page,
                 mimetype="text/html",
+                is_front=True,
             )
             if DEFAULT_HOMEPAGE != self.metadata["homepage_name"]:
                 self.creator.add_redirect(
@@ -384,10 +380,12 @@ class wikihow2zim(GlobalMixin):
     def scrape_category_page(self, category: str, page_num: int, recurse: bool):
 
         category_url = f"/{self.metadata['category_prefix']}:{category}"
+        params = {}
         if page_num > 1:
             logger.info(f">> Category:{category} (page={page_num})")
+            params = {"pg": page_num}
 
-        soup = get_soup(category_url, pg=page_num)
+        soup = get_soup(category_url, **params)
 
         # Find and replace ?pg= to _pg= in pagination
         for a in soup.select("#large_pagination a[href]"):
@@ -425,7 +423,7 @@ class wikihow2zim(GlobalMixin):
             to_root=to_root,
             body_classes=" ".join(soup.find("body").attrs.get("class", [])),
             content=self.rewriter.rewrite(content.decode_contents(), to_root=to_root),
-            page_linked_styles=self.metadata["category_styles"],
+            page_linked_styles=self.get_style_urls(soup),
             viewport_classes=" ".join(
                 soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
             ),
@@ -438,6 +436,7 @@ class wikihow2zim(GlobalMixin):
                 title=title,
                 content=page,
                 mimetype="text/html",
+                is_front=True,
             )
 
         return articles, nb_pages, sub_categories
@@ -467,9 +466,8 @@ class wikihow2zim(GlobalMixin):
                 ".wh_ad_inner, .wh_ad_active, [data-service=adsense], .wh_ad_spacing"
             )
         ]
-
-        # _ = [img.decompose() for img in content.select("noscript > img")]
-        # _ = [noscript.decompose() for noscript in content.select("noscript:empty")]
+        _ = [elem.decompose() for elem in content.select("noscript > img")]
+        _ = [elem.decompose() for elem in content.select("noscript:empty")]
 
         # some articles include a `/`. ex: Système-Macintosh/Apple
         to_root = "./" + ("../" * article.count("/"))
@@ -477,7 +475,7 @@ class wikihow2zim(GlobalMixin):
             to_root=to_root,
             body_classes=" ".join(soup.find("body").attrs.get("class", [])),
             content=self.rewriter.rewrite(content.decode_contents(), to_root=to_root),
-            page_linked_styles=self.metadata["article_styles"],
+            page_linked_styles=self.get_style_urls(soup),
             # page_inline_styles=self.metadata["article_inline_digest"],
             viewport_classes=" ".join(
                 soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
@@ -491,6 +489,7 @@ class wikihow2zim(GlobalMixin):
                 title=title,
                 content=page,
                 mimetype="text/html",
+                is_front=True,
             )
 
     def run(self):
