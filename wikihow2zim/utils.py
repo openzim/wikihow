@@ -72,6 +72,21 @@ def cat_ident_for(href: str) -> str:
     return normalize_ident(href.split(":", 1)[1])
 
 
+def fix_pagination_links(soup: bs4.element.Tag):
+    """Replace ?pg= to _pg= in pagination links"""
+    for a in soup.select("#large_pagination a[href]"):
+        a["href"] = a["href"].replace("?pg=", "_pg=")
+
+
+def get_subcategories_from(soup: bs4.element.Tag, recurse: bool) -> List[str]:
+    """sub-categories urls from a category soup"""
+    if recurse:
+        return [
+            cat_ident_for(link.attrs["href"])
+            for link in soup.select("div#subcats * a.cat_link")
+        ]
+
+
 def normalize_ident(ident: str) -> str:
     """URL-decoded category identifier"""
     return urllib.parse.unquote(ident)
