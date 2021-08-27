@@ -11,13 +11,15 @@ from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.inputs import handle_user_provided_file
 from zimscraperlib.zim.items import URLItem
 
-from .constants import DEFAULT_HOMEPAGE, ROOT_DIR, Conf
+from .constants import DEFAULT_HOMEPAGE, MAX_HTTP_404_THRESHOLD, ROOT_DIR, Conf
 from .shared import Global, GlobalMixin, logger
 from .utils import (
     article_ident_for,
     cat_ident_for,
+    fix_pagination_links,
     get_digest,
     get_soup,
+    get_subcategories_from,
     normalize_ident,
     parse_css,
     setup_s3_and_check_credentials,
@@ -53,6 +55,10 @@ class wikihow2zim(GlobalMixin):
         # Source HTML references a dynamic CSS that is built using a varietyof features
         # so it's very common different CSS urls references the same resources (imgs)
         self.resources_digests = set()
+        # idem, list of URLs which returned HTTP 404.
+        # There are legit scenarios for 404 on wikiHow: login pages
+        # we need to track them for later use
+        self.missing_articles = set()
 
     @property
     def build_dir(self):
@@ -358,24 +364,24 @@ class wikihow2zim(GlobalMixin):
 
         logger.info(f"> Category:{category} ({recurse=})")
 
-        articles, nb_pages, sub_categories = self.scrape_category_page(
+        nb_pages, sub_categories = self.scrape_category_page(
             category, page_num=1, recurse=recurse
         )
 
         if nb_pages > 1:
             for page_num in range(2, nb_pages + 1):
-                # articles list is first item in returned tuple
-                articles.union(
-                    self.scrape_category_page(
-                        category, page_num=page_num, recurse=False
-                    )[0]
-                )
-
-        for article in articles:
-            self.scrape_article(article)
+                self.scrape_category_page(category, page_num=page_num, recurse=False)
 
         for sub_category in sub_categories or []:
             self.scrape_category(sub_category)
+
+    def record_missing_url(self, url):
+        self.missing_articles.add(url)
+
+        if len(self.missing_articles) >= MAX_HTTP_404_THRESHOLD:
+            raise Exception(
+                f"Maximum HTTP 404 threshold reached ({MAX_HTTP_404_THRESHOLD})"
+            )
 
     def scrape_category_page(self, category: str, page_num: int, recurse: bool):
 
@@ -386,39 +392,37 @@ class wikihow2zim(GlobalMixin):
             params = {"pg": page_num}
 
         soup = get_soup(category_url, **params)
-
-        # Find and replace ?pg= to _pg= in pagination
-        for a in soup.select("#large_pagination a[href]"):
-            a["href"] = a["href"].replace("?pg=", "_pg=")
+        fix_pagination_links(soup)
 
         articles = set()
         for link in soup.select("#cat_all .responsive_thumb a"):
             articles.add(article_ident_for(link.attrs.get("href")))
 
+        for article in articles:
+            if not self.scrape_article(article):
+                missing_url = to_url(f"/{article}")
+                for a in soup.find_all("a", href=missing_url):
+                    del a["href"]
+                self.record_missing_url(missing_url)
+
         nb_pages = len(soup.select("#large_pagination ul li"))
 
-        if recurse:
-            sub_categories = [
-                cat_ident_for(link.attrs["href"])
-                for link in soup.select("div#subcats * a.cat_link")
-            ]
-        else:
-            sub_categories = None
+        sub_categories = get_subcategories_from(soup, recurse)
 
         # extract and clean main content
-        title = soup.find("title").string
         content = soup.select("div#content_wrapper")[0]
         _ = [elem.decompose() for elem in content.find_all("script")]
         _ = [elem.decompose() for elem in content.select("noscript > img")]
         _ = [elem.decompose() for elem in content.select("noscript:empty")]
         _ = [elem.decompose() for elem in content.select("#cat_wca")]
 
-        #
         path = f"{self.metadata['category_prefix']}:{category}"
         if page_num > 1:
             path += f"_pg={page_num}"
         # some categories include a `/`. ex: Système-Macintosh/Apple
         to_root = "./" + ("../" * path.count("/"))
+
+        title = soup.find("title").string
         page = self.env.get_template("category.html").render(
             to_root=to_root,
             body_classes=" ".join(soup.find("body").attrs.get("class", [])),
@@ -439,7 +443,7 @@ class wikihow2zim(GlobalMixin):
                 is_front=True,
             )
 
-        return articles, nb_pages, sub_categories
+        return nb_pages, sub_categories
 
     def scrape_article(self, article):
         if article in self.articles:
@@ -448,11 +452,18 @@ class wikihow2zim(GlobalMixin):
 
         logger.info(f">> Article:{article}")
 
-        soup = get_soup(f"/{article}")
+        try:
+            soup = get_soup(f"/{article}")
+        except requests.exceptions.HTTPError as exc:
+            if exc.response.status_code == 404:
+                logger.debug(">>> HTTP 404, skipping.")
+                return False
+            raise exc
 
         # extract and clean main content
         title = soup.find("title").string
         content = soup.select("div#content_wrapper")[0]
+
         _ = [elem.decompose() for elem in content.find_all("script")]
         _ = [elem.decompose() for elem in content.select(".pdf_link")]
         _ = [elem.decompose() for elem in content.select("#side_follow")]
@@ -491,6 +502,7 @@ class wikihow2zim(GlobalMixin):
                 mimetype="text/html",
                 is_front=True,
             )
+        return True
 
     def run(self):
         s3_storage = (
@@ -550,6 +562,7 @@ class wikihow2zim(GlobalMixin):
             logger.info(
                 f"Stats: {len(self.categories)} categories, "
                 f"{len(self.articles)} articles, "
+                f"{len(self.missing_articles)} missing articles, "
                 f"{self.imager.nb_requested} images"
             )
 
