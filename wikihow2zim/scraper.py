@@ -101,9 +101,9 @@ class wikihow2zim(GlobalMixin):
                 .attrs.get("href")
                 .split(":", 1)[0][1:]
             ),
-            "homepage_name": soup.select("a#header_logo")[0]
-            .attrs.get("href")
-            .replace("/", ""),
+            "homepage_name": normalize_ident(
+                soup.select("a#header_logo")[0].attrs.get("href").replace("/", "")
+            ),
             "title": soup.find("title").string,
             "description": soup.find("meta", attrs={"name": "description"}).attrs.get(
                 "content"
