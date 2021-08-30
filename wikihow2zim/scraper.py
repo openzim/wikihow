@@ -379,8 +379,9 @@ class wikihow2zim(GlobalMixin):
         self.missing_articles.add(url)
 
         if len(self.missing_articles) >= MAX_HTTP_404_THRESHOLD:
-            raise Exception(
-                f"Maximum HTTP 404 threshold reached ({MAX_HTTP_404_THRESHOLD})"
+            logger.error(
+                "Maximum HTTP 404 threshold reached "
+                f"({self.missing_articles}>={MAX_HTTP_404_THRESHOLD})"
             )
 
     def scrape_category_page(self, category: str, page_num: int, recurse: bool):
