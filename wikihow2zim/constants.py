@@ -24,7 +24,7 @@ URLS = {
     "cs": "https://www.wikihow.cz",
     "de": "https://de.wikihow.com",
     "es": "https://es.wikihow.com",
-    "fa": "https://wikihowfarsi.com",
+    "fa": "https://www.wikihowfarsi.com",
     "fr": "https://fr.wikihow.com",
     "hi": "https://hi.wikihow.com",
     "id": "https://id.wikihow.com",
