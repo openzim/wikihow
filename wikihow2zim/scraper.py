@@ -59,6 +59,7 @@ class wikihow2zim(GlobalMixin):
         # There are legit scenarios for 404 on wikiHow: login pages
         # we need to track them for later use
         self.missing_articles = set()
+        self.missing_categories = set()
 
     @property
     def build_dir(self):
@@ -392,7 +393,16 @@ class wikihow2zim(GlobalMixin):
             logger.info(f">> Category:{category} (page={page_num})")
             params = {"pg": page_num}
 
-        soup = get_soup(category_url, **params)
+        try:
+            soup = get_soup(category_url, **params)
+        except requests.exceptions.HTTPError as exc:
+            # don't fail on missing Category (#46)
+            if exc.response.status_code == 404:
+                logger.debug(">>> HTTP 404, skipping.")
+                self.missing_categories.add(category_url)
+                return 0, []
+            raise exc
+
         fix_pagination_links(soup)
 
         articles = set()
@@ -563,6 +573,7 @@ class wikihow2zim(GlobalMixin):
             logger.info(
                 f"Stats: {len(self.categories)} categories, "
                 f"{len(self.articles)} articles, "
+                f"{len(self.missing_categories)} missing categories, "
                 f"{len(self.missing_articles)} missing articles, "
                 f"{self.imager.nb_requested} images"
             )
