@@ -55,9 +55,19 @@ class Global:
             prefix="IMG-T-",
         )
 
+        Global.video_executor = Executor(
+            queue_size=20,
+            nb_workers=1,
+            prefix="VID-T-",
+        )
+
         from .imager import Imager
 
         Global.imager = Imager()
+
+        from .videos import VideoGrabber
+
+        Global.vidgrabber = VideoGrabber()
 
         from .rewriter import Rewriter
 

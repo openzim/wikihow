@@ -87,6 +87,21 @@ def get_subcategories_from(soup: bs4.element.Tag, recurse: bool) -> List[str]:
         ]
 
 
+def mormalize_youtube_url(url: str) -> str:
+    """cherche et extrait Id video
+    format: https://www.youtube.com/watch?v=C1vI8k-JEsQ
+    """
+
+    base_url = "https://www.youtube.com/watch?v="
+    url = urllib.parse.urlparse(url)
+    if url.path.startswith("/embed/"):
+        return f"{base_url}{url.path[7:]}"
+    if url.path.startswith("/watch"):
+        return f"{base_url}{url.query[2:]}"
+
+    return url
+
+
 def normalize_ident(ident: str) -> str:
     """URL-decoded category identifier"""
     return urllib.parse.unquote(ident)

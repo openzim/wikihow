@@ -480,6 +480,16 @@ class wikihow2zim(GlobalMixin):
         _ = [elem.decompose() for elem in content.select("noscript > img")]
         _ = [elem.decompose() for elem in content.select("noscript:empty")]
 
+        for y_video in soup.find_all("iframe"):
+            path = Global.vidgrabber.defer(url=y_video["data-src"])
+            y_video.parent.replace_with(
+                self.env.get_template("video.html").render(path=path)
+            )
+
+        for video in soup.find_all("video"):
+            path = Global.vidgrabber.defer(url=(to_url("/video" + video["data-src"])))
+            video.replace_with(self.env.get_template("video.html").render(path=path))
+
         # some articles include a `/`. ex: Système-Macintosh/Apple
         to_root = "./" + ("../" * article.count("/"))
         page = self.env.get_template("article.html").render(
@@ -568,6 +578,9 @@ class wikihow2zim(GlobalMixin):
 
             logger.info("Awaiting images")
             Global.img_executor.shutdown()
+
+            logger.info("Awaiting videos")
+            Global.video_executor.shutdown()
 
         except Exception as exc:
             # request Creator not to create a ZIM file on finish
