@@ -106,6 +106,10 @@ class GlobalMixin:
         return Global.imager
 
     @property
+    def vidgrabber(self):
+        return Global.vidgrabber
+
+    @property
     def executor(self):
         return Global.executor
 

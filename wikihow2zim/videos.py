@@ -5,16 +5,22 @@
 import io
 import re
 import urllib.parse
-from typing import Optional
+from typing import Optional, Union
 
 import youtube_dl
 from kiwixstorage import KiwixStorage, NotFoundError
+from tld import get_fld
 from zimscraperlib.video.encoding import reencode
 from zimscraperlib.video.presets import VideoWebmHigh, VideoWebmLow
 
 from .constants import VIDEOS_ENCODER_VERSION
 from .shared import Global
-from .utils import get_digest, get_version_ident_for, mormalize_youtube_url
+from .utils import (
+    get_digest,
+    get_version_ident_for,
+    get_youtube_id_from,
+    normalize_youtube_url,
+)
 
 logger = Global.logger
 
@@ -29,28 +35,38 @@ class VideoGrabber:
 
         Global.video_executor.start()
 
+    @staticmethod
+    def youtube_poster_url(url: str):
+        yid = get_youtube_id_from(url)
+        if yid:
+            return f"http://img.youtube.com/vi_webp/{yid}/sddefault.webp"
+
     @property
     def videos_dir(self):
         return Global.conf.build_dir.joinpath("videos")
 
     def abort(self):
-        """request videor to cancel processing of futures"""
+        """request videograbber to cancel processing of requests"""
         self.aborted = True
 
-    def get_url(self, url: str):
-
-        is_youtube = False
-        if "https://www.youtube.com/" in url:
-            url = mormalize_youtube_url(url)
-            is_youtube = True
-
+    def get_url(self, url: str) -> urllib.parse.ParseResult:
+        """normalized URL from requested one"""
+        is_youtube = get_fld(url) == "youtube.com"
+        if is_youtube:
+            url = normalize_youtube_url(url)
         return urllib.parse.urlparse(url), is_youtube
 
-    def get_video_data(self, url: str, is_youtube: bool) -> io.BytesIO:
-        preset = VideoWebmLow() if Global.conf.low_quality else VideoWebmHigh()
+    def get_video_fpath(self, url: str, is_youtube: bool) -> io.BytesIO:
+        """fpath of downloadd and processed video from url"""
+
+        # we only support WebM
         audext, vidext = ("webm", "webm")
-        video_format = "webm"
+        preset = VideoWebmLow() if Global.conf.low_quality else VideoWebmHigh()
+
         digest = get_digest(url)
+
+        # download video using youtube-dl.
+        # used for both youtube videos and standard (.mp4) urls
         options = {
             "cachedir": self.videos_dir,
             "writethumbnail": False,
@@ -64,7 +80,7 @@ class VideoGrabber:
             "fragment-retries": 50,
             "skip-unavailable-fragments": True,
             "outtmpl": str(self.videos_dir.joinpath(digest + ".%(ext)s")),
-            "preferredcodec": video_format,
+            "preferredcodec": Global.conf.video_format,
             "format": f"best[ext={vidext}]/bestvideo[ext={vidext}]+"
             f"bestaudio[ext={audext}]/best",
             "y2z_videos_dir": self.videos_dir,
@@ -73,14 +89,15 @@ class VideoGrabber:
         with youtube_dl.YoutubeDL(options) as ydl:
             ydl.download([url])
 
+        # find downloaded videos from youtube-dl output dir
+        # extension is unknown at this stage. filename should respect
+        # the `outtmpl` format we gave to youtube-dl though.
         files = [
             p
             for p in self.videos_dir.iterdir()
             if p.stem == digest and p.suffix not in (".jpg", ".webp")
         ]
-
         if len(files) == 0:
-            # logger.info(list(self.videos_dir.iterdir()))
             logger.error(f"Video file missing in {self.videos_dir} for {url}")
             logger.debug(list(self.videos_dir.iterdir()))
             raise FileNotFoundError(f"Missing video file in {self.videos_dir}")
@@ -91,10 +108,15 @@ class VideoGrabber:
             )
         src_path = files[0]
 
-        if not Global.conf.low_quality and src_path.suffix[1:] == video_format:
+        # skip reencoding if youtube-dl gave us a WebM file and we don't need low-Q
+        if (
+            not Global.conf.low_quality
+            and src_path.suffix[1:] == Global.conf.video_format
+        ):
             return src_path
 
-        dst_path = src_path.with_suffix(f".{video_format}")
+        # reencode if format is different or quality must be reduced
+        dst_path = src_path.with_name(f"{src_path.stem}-2.{Global.conf.video_format}")
         reencode(
             src_path,
             dst_path,
@@ -102,7 +124,7 @@ class VideoGrabber:
             delete_src=False,
             failsafe=False,
         )
-        # print(dst_path)
+
         return dst_path
 
     def get_s3_key_for(self, url: str) -> str:
@@ -113,7 +135,7 @@ class VideoGrabber:
         self,
         url: str,
         path: Optional[str] = None,
-    ) -> str:
+    ) -> Union[str, None]:
         """request full processing of url, returning in-zim path immediately"""
 
         # find actual URL should it be from a provider
@@ -128,11 +150,11 @@ class VideoGrabber:
             logger.warning(f"Not supporting video URL `{url.geturl()}`. Skipping")
             return
 
-        # skip processing if we already processed it or have it in pipe
         digest = get_digest(url.geturl())
         if path is None:
             path = f"videos/{digest}"
 
+        # skip processing if we already processed it or have it in pipe
         if digest in self.handled:
             logger.debug(f"URL `{url.geturl()}` already processed.")
             return path
@@ -152,12 +174,11 @@ class VideoGrabber:
         return path
 
     def once_done(self):
-        """default callback for single video processing"""
         self.nb_done += 1
         logger.debug(f"Videos {self.nb_done}/{self.nb_requested}")
 
     def process_video(self, url: str, is_youtube: bool, path) -> str:
-        """download video from url or S3 and add to Zim at path. Upload if req."""
+        """download video from url or S3 and add to ZIM at path. Upload if req."""
 
         if self.aborted:
             return
@@ -167,7 +188,7 @@ class VideoGrabber:
             with Global.lock:
                 Global.creator.add_item_for(
                     path=path,
-                    fpath=self.get_video_data(url.geturl(), is_youtube),
+                    fpath=self.get_video_fpath(url.geturl(), is_youtube),
                     delete_fpath=True,
                     callback=self.once_done,
                 )
@@ -209,7 +230,7 @@ class VideoGrabber:
 
         # we're using S3 but don't have it or failed to download
         try:
-            fpath = self.get_video_data(url.geturl(), is_youtube)
+            fpath = self.get_video_fpath(url.geturl(), is_youtube)
         except Exception as exc:
             logger.error(f"Failed to download/convert/optim source  at {url.geturl()}")
             logger.exception(exc)

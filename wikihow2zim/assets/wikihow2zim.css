@@ -74,3 +74,24 @@ html[dir=rtl] a.external-link {
 .kiwix #kiwixtoolbar button {
     color:  black;
 }
+
+
+/* video support */
+
+/* video section block is hidden by default and displayed later by JS */
+.section.video {
+    display: block;
+}
+
+/* related articles on bottom or Article are not visible.
+    CSS also changed by JS
+    TODO:  ensure responsiveness */
+#relatedwikihows .content-fill {
+    position: relative;
+}
+#relatedwikihows .wikihow2zim {
+    height: 188.583px;
+}
+.related-wh-title {
+    left:  0;
+}

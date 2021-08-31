@@ -6,3 +6,4 @@ css-beautify>=1.10.3<2.0
 six>=1.16.0,<2.0  # css-beautify dependency
 kiwixstorage>=0.8.1,<0.9
 pif>=0.8.2,<0.9
+tld>=0.12.6,<0.13

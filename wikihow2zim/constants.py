@@ -79,6 +79,7 @@ class Conf:
     without_images: Optional[bool] = False
     without_external_links: Optional[bool] = False
     low_quality: Optional[bool] = False
+    video_format: Optional[str] = "webm"
 
     # debug/devel
     categories: List[str] = field(default_factory=list)

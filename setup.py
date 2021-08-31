@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
+import subprocess
 
 from setuptools import setup
 
@@ -10,6 +11,10 @@ root_dir = pathlib.Path(__file__).parent
 def read(*names, **kwargs):
     with open(root_dir.joinpath(*names), "r") as fh:
         return fh.read()
+
+
+print("Downloading JS dependencies...")
+subprocess.run([str(root_dir.joinpath("get_js_deps.sh").resolve())], check=True)
 
 
 setup(
