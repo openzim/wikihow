@@ -522,7 +522,7 @@ class wikihow2zim(GlobalMixin):
         self.missing_articles.add(url)
 
         if len(self.missing_articles) >= MAX_HTTP_404_THRESHOLD:
-            raise Exception(
+            logger.debug(
                 f"Maximum HTTP 404 threshold reached ({MAX_HTTP_404_THRESHOLD})"
             )
 
