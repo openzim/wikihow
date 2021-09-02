@@ -3,7 +3,7 @@ LABEL org.opencontainers.image.source https://github.com/openzim/wikihow
 
 # Install necessary packages
 RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends locales wget libmagic1 \
+    && apt-get install -y --no-install-recommends locales wget curl unzip libmagic1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -25,7 +25,7 @@ RUN wget --progress=dot:giga -L \
 COPY requirements.txt /src/
 RUN pip3 install --no-cache-dir -r /src/requirements.txt
 COPY wikihow2zim /src/wikihow2zim
-COPY setup.py *.md /src/
+COPY setup.py *.md get_js_deps.sh MANIFEST.in /src/
 RUN cd /src/ \
     && python3 ./setup.py install \
     && rm -r /src \
