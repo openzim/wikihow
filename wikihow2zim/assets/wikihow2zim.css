@@ -95,3 +95,7 @@ html[dir=rtl] a.external-link {
 .related-wh-title {
     left:  0;
 }
+/* Fixed sidebar related */
+#side_related_articles .related-wh .content-spacer {
+    height: 150.257px;
+}
