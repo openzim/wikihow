@@ -3,6 +3,7 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import io
+import re
 import urllib.parse
 import zlib
 from typing import Iterable, List, Tuple, Union
@@ -48,9 +49,18 @@ def fetch(path: str, **params) -> str:
     return stream.getvalue().decode("UTF-8")
 
 
+def get_soup_of(text: str, unwrap: bool = False):
+    """an lxml soup of an HTML string"""
+    soup = bs4.BeautifulSoup(text, "lxml")
+    if unwrap:
+        for elem in ("body", "html"):
+            getattr(soup, elem).unwrap()
+    return soup
+
+
 def get_soup(path: str, **params) -> bs4.BeautifulSoup:
     """an lxml soup of a path on source website"""
-    return bs4.BeautifulSoup(fetch(path, **params), "lxml")
+    return get_soup_of(fetch(path, **params))
 
 
 def soup_link_finder(elem: bs4.element.Tag) -> bool:
@@ -85,6 +95,28 @@ def get_subcategories_from(soup: bs4.element.Tag, recurse: bool) -> List[str]:
             cat_ident_for(link.attrs["href"])
             for link in soup.select("div#subcats * a.cat_link")
         ]
+
+
+def get_youtube_id_from(url: str) -> str:
+    """Youtube video Id from a youtube URL"""
+    uri = urllib.parse.urlparse(url)
+    if uri.path.startswith("/embed/"):
+        m = re.match(r"^/embed/(?P<id>[^/]+)", uri.path)
+        if m:
+            return m.groupdict().get("id")
+    if uri.path.startswith("/watch"):
+        return urllib.parse.parse_qs(uri.query).get("v", [None]).pop()
+
+
+def normalize_youtube_url(url: str) -> str:
+    """harmonize youtube-URL to use a single (public viewing) format
+
+    format: https://www.youtube.com/watch?v=C1vI8k-JEsQ"""
+
+    yid = get_youtube_id_from(url)
+    if yid:
+        return f"https://www.youtube.com/watch?v={yid}"
+    return url
 
 
 def normalize_ident(ident: str) -> str:

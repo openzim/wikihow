@@ -4,6 +4,7 @@ import datetime
 import pathlib
 import shutil
 
+import bs4
 import requests
 from jinja2 import Environment, FileSystemLoader
 from zimscraperlib.image.convertion import convert_image
@@ -19,6 +20,7 @@ from .utils import (
     fix_pagination_links,
     get_digest,
     get_soup,
+    get_soup_of,
     get_subcategories_from,
     normalize_ident,
     parse_css,
@@ -376,15 +378,6 @@ class wikihow2zim(GlobalMixin):
         for sub_category in sub_categories or []:
             self.scrape_category(sub_category)
 
-    def record_missing_url(self, url):
-        self.missing_articles.add(url)
-
-        if len(self.missing_articles) >= MAX_HTTP_404_THRESHOLD:
-            logger.error(
-                "Maximum HTTP 404 threshold reached "
-                f"({self.missing_articles}>={MAX_HTTP_404_THRESHOLD})"
-            )
-
     def scrape_category_page(self, category: str, page_num: int, recurse: bool):
 
         category_url = f"/{self.metadata['category_prefix']}:{category}"
@@ -475,21 +468,31 @@ class wikihow2zim(GlobalMixin):
         title = soup.find("title").string
         content = soup.select("div#content_wrapper")[0]
 
-        _ = [elem.decompose() for elem in content.find_all("script")]
-        _ = [elem.decompose() for elem in content.select(".pdf_link")]
-        _ = [elem.decompose() for elem in content.select("#side_follow")]
-        _ = [elem.decompose() for elem in content.select("#sidebar_share")]
-        _ = [elem.decompose() for elem in content.select("#other_languages")]
-        _ = [elem.decompose() for elem in content.select("#article_rating_mobile")]
-        _ = [elem.decompose() for elem in content.select("#end_options")]
-        _ = [
-            elem.decompose()
-            for elem in content.select(
-                ".wh_ad_inner, .wh_ad_active, [data-service=adsense], .wh_ad_spacing"
-            )
-        ]
-        _ = [elem.decompose() for elem in content.select("noscript > img")]
-        _ = [elem.decompose() for elem in content.select("noscript:empty")]
+        black_list = (
+            "script",
+            ".pdf_link",
+            "#side_follow",
+            "#sidebar_share",
+            "#other_languages",
+            "#article_rating_mobile",
+            "#end_options",
+            ".section.tips",
+            ".section.bss_share_container",
+            ".wh_ad_inner, .wh_ad_active, [data-service=adsense], .wh_ad_spacing",
+            "noscript > img",
+            "noscript:empty",
+            # Q&A block
+            "#qa >:not(#qa_answered_questions_container)",
+            "#qa_answered_questions_container #qa_aq_search_container, "
+            "#qa_answered_questions_container #qa_add_curated_question",
+            ".qa_answer_footer",
+            ".qa_no_answered",
+            "#qa_see_more_answered",
+        )
+        for selector in black_list:
+            _ = [elem.decompose() for elem in content.select(selector)]
+
+        self.handle_videos_for(soup)
 
         # some articles include a `/`. ex: Système-Macintosh/Apple
         to_root = "./" + ("../" * article.count("/"))
@@ -514,6 +517,116 @@ class wikihow2zim(GlobalMixin):
                 is_front=True,
             )
         return True
+
+    def record_missing_url(self, url):
+        self.missing_articles.add(url)
+
+        if len(self.missing_articles) >= MAX_HTTP_404_THRESHOLD:
+            logger.debug(
+                f"Maximum HTTP 404 threshold reached ({MAX_HTTP_404_THRESHOLD})"
+            )
+
+    def handle_videos_for(self, soup: bs4.element.Tag):
+        for iframe in soup.select(".embedvideocontainer iframe.embedvideo"):
+            path = Global.vidgrabber.defer(url=iframe.get("data-src"))
+            if path is None:
+                iframe.decompose()
+                continue
+
+            poster = Global.imager.defer(
+                Global.vidgrabber.youtube_poster_url(iframe.get("data-src"))
+            )
+            iframe.replace_with(
+                get_soup_of(
+                    self.env.get_template("video.html").render(
+                        path=path,
+                        poster=poster,
+                        video_format=self.conf.video_format,
+                        width=iframe.attrs.get("width", "728"),
+                        height=iframe.attrs.get("height", "428"),
+                        autoplay="autoplay" in iframe.attrs.get("allow", ""),
+                        controls=True,
+                    ),
+                    unwrap=True,
+                )
+            )
+
+        # main-content (step) video hosted by wikiHow
+        for video in soup.select(".video-player .video-container video"):
+            # skip our own videos
+            if "wikihow2zim" in video.attrs.get("class"):
+                continue
+
+            url = video.attrs.get("src")
+            if not url and not video.attrs.get("data-src"):
+                # missing source
+                video.decompose()
+                continue
+            if not url:
+                url = to_url(f"/video{video.attrs.get('data-src')}")
+
+            path = Global.vidgrabber.defer(url=to_url(url))
+            if path is None:
+                continue
+
+            poster_path = Global.imager.defer(
+                url=to_url(video.attrs.get("poster", video.attrs.get("data-poster")))
+            )
+            # remove extra “controls” and watermark (from .video-player) :requires JS
+            for elem in video.parent.parent.select(".m-video-controls, .m-video-wm"):
+                elem.decompose()
+            video.replace_with(
+                get_soup_of(
+                    self.env.get_template("video.html").render(
+                        path=path,
+                        poster=poster_path,
+                        classes=" ".join(video.attrs.get("class")),
+                        video_format=self.conf.video_format,
+                        autoplay=True,
+                        muted="muted" in video.attrs,
+                        loop="loop" in video.attrs,
+                        playsinline="playsinline" in video.attrs,
+                        controls=False,
+                    )
+                )
+            )
+
+        # related articles links using video as thumbnail
+        for video in soup.select("#relatedwikihows .related-wh video"):
+            if "wikihow2zim" in video.attrs.get("class"):
+                continue
+
+            url = video.attrs.get("src")
+            if not url and not video.attrs.get("data-src"):
+                # missing source
+                video.decompose()
+                continue
+
+            if not url:
+                url = to_url(f"/video{video.attrs.get('data-src')}")
+
+            path = Global.vidgrabber.defer(url=to_url(url))
+            if path is None:
+                video.decompose()
+                continue
+
+            video.replace_with(
+                get_soup_of(
+                    self.env.get_template("video.html").render(
+                        path=path,
+                        classes=" ".join(video.attrs.get("class")),
+                        video_format=self.conf.video_format,
+                        autoplay=True,
+                        width=video.attrs.get("width", "342"),
+                        height=video.attrs.get("height", "184"),
+                        alt=video.attrs.get("alt"),
+                        muted="muted" in video.attrs,
+                        loop="loop" in video.attrs,
+                        playsinline="playsinline" in video.attrs,
+                        controls=False,
+                    )
+                )
+            )
 
     def run(self):
         s3_storage = (
@@ -575,11 +688,15 @@ class wikihow2zim(GlobalMixin):
                 f"{len(self.articles)} articles, "
                 f"{len(self.missing_categories)} missing categories, "
                 f"{len(self.missing_articles)} missing articles, "
-                f"{self.imager.nb_requested} images"
+                f"{self.imager.nb_requested} images, "
+                f"{self.vidgrabber.nb_requested} videos"
             )
 
             logger.info("Awaiting images")
             Global.img_executor.shutdown()
+
+            logger.info("Awaiting videos")
+            Global.video_executor.shutdown()
 
         except Exception as exc:
             # request Creator not to create a ZIM file on finish

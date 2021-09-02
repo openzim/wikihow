@@ -1,0 +1,13 @@
+<video  class="video-js vjs-default-skin wikihow2zim{% if classes%} {{ classes }}{% endif %}"
+        {% if poster %}poster="{{ poster }}"{% endif %}
+        {% if width %}width="{{ width }}"{% endif %}
+        {% if height%}height="{{ height }}"{% endif %}
+        {% if autoplay %}autoplay="autoplay"{% endif %}
+        {% if muted %}muted="muted"{% endif %}
+        {% if loop %}loop="loop"{% endif %}
+        {% if preload %}preload="preload"{% endif %}
+        {% if playsinline %}playsinline="playsinline"{% endif %}
+        {% if alt %}alt="{{ alt }}"{% endif %}
+        data-setup='{"techOrder": ["html5", "ogvjs"], "ogvjs": {"base": "assets/ogvjs"}, "autoplay": {% if autoplay %}true{% else %}false{% endif %}, "muted": {% if muted %}true{% else %}false{% endif %}, "loop": {% if loop %}true{% else %}false{% endif %}, "preload": true, "controls":  {% if controls %}true{% else %}false{% endif %}, "controlBar": {"pictureInPictureToggle":false}}'>
+    <source src="{{ path }}" type="video/{{ video_format }}" />
+</video>

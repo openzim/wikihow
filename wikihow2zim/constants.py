@@ -18,6 +18,7 @@ with open(ROOT_DIR.joinpath("VERSION"), "r") as fh:
 
 SCRAPER = f"{NAME} {VERSION}"
 IMAGES_ENCODER_VERSION = 1
+VIDEOS_ENCODER_VERSION = 1
 URLS = {
     "en": "https://www.wikihow.com",
     "ar": "https://ar.wikihow.com",
@@ -78,6 +79,7 @@ class Conf:
     without_images: Optional[bool] = False
     without_external_links: Optional[bool] = False
     low_quality: Optional[bool] = False
+    video_format: Optional[str] = "webm"
 
     # debug/devel
     categories: List[str] = field(default_factory=list)
@@ -113,6 +115,7 @@ class Conf:
             self.build_dir = pathlib.Path(
                 tempfile.mkdtemp(prefix=f"{self.domain}_", dir=self.tmp_dir)
             )
+        self.build_dir.joinpath("videos").mkdir(parents=True, exist_ok=True)
 
         if self.stats_filename:
             self.stats_filename = pathlib.Path(self.stats_filename).expanduser()
