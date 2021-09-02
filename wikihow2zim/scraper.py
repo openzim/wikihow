@@ -349,6 +349,16 @@ class wikihow2zim(GlobalMixin):
                     DEFAULT_HOMEPAGE, self.metadata["homepage_name"]
                 )
 
+    def scrape_footer_articles(self):
+
+        for link in [
+            "wikiHow:About-wikiHow",
+            "wikiHow:Contact-Us",
+            "Special:Sitemap",
+            "wikiHow:Terms-of-Use",
+        ]:
+            self.scrape_article(link, remove_link=True)
+
     def scrape_categories(self):
         logger.info("Starting scraping from categories")
 
@@ -449,7 +459,7 @@ class wikihow2zim(GlobalMixin):
 
         return nb_pages, sub_categories
 
-    def scrape_article(self, article):
+    def scrape_article(self, article, remove_all_links=False):
         if article in self.articles:
             return
         self.articles.add(article)
@@ -492,6 +502,10 @@ class wikihow2zim(GlobalMixin):
         )
         for selector in black_list:
             _ = [elem.decompose() for elem in content.select(selector)]
+
+        if remove_all_links:
+            for elem in content.select("a[href]"):
+                del elem.attrs["href"]
 
         self.handle_videos_for(soup)
 
@@ -684,6 +698,8 @@ class wikihow2zim(GlobalMixin):
 
             self.add_homepage()
             self.scrape_categories()
+            self.scrape_footer_articles()
+
             logger.info(
                 f"Stats: {len(self.categories)} categories, "
                 f"{len(self.articles)} articles, "
