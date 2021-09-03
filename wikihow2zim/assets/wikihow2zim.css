@@ -1,3 +1,63 @@
+/* About This Article */
+.wikihow-article #social_proof_mobile {
+    background-color: #fff;
+    font-size: .9em;
+}
+.wikihow-article #social_proof_mobile, #social_proof_mobile p {
+    font-size: inherit;
+    line-height: inherit;
+}
+.wikihow-article #aboutthisarticle > .section_text, #aboutthisarticle .sp_top_box, #aboutthisarticle #sp_expert_desc, #aboutthisarticle .sp_box {
+    padding: 15px 26px;
+}
+.wikihow-article #aboutthisarticle .sp_stats_box {
+    border-left: 1px solid #f3f3f3;
+}
+.wikihow-article #aboutthisarticle .sp_box {
+    float: left;
+    width: 50%;
+    margin: 0;
+    padding: 15px 10px 15px 15px;
+    position: relative;
+    box-sizing: border-box;
+}
+.wikihow-article #sp_expert_desc {
+    padding: 10px 8px;
+    border-bottom: 1px solid #f3f3f3;
+}
+.wikihow-article #social_proof_mobile .sp_fullbox {
+    width: 100%;
+    border-top: 1px solid #f3f3f3;
+    border-left: none;
+    font-size: 16px;
+}
+
+/* footer of article page */
+.wikihow-article #footer {
+    padding: 0;
+    margin: 0;
+    bottom: 0;
+    width: 100%;
+    font-size: .9em;
+    background-color: #93B874;
+    color: #FFF;
+}
+.wikihow-article #footer a {
+    color: #FFF;
+}
+.wikihow-article .footer_divider {
+    border-top: 1px solid #77a555;
+    padding-bottom: 1em;
+    margin-top: 1em;
+}
+.wikihow-article #footer_inner {
+    padding: 30px 1em;
+    margin: 0 auto;
+}
+.wikihow-article #footer_links li {
+    white-space: nowrap;
+    line-height: 2em;
+}
 
 /* Changing footer appearance so that the separator line takes all width
    and footer links are aligned right on larger screen */
