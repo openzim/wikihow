@@ -124,7 +124,7 @@ class wikihow2zim(GlobalMixin):
 
         if not self.conf.name:
             self.conf.name = "wikihow_{lang}_{selection}".format(
-                lang=self.conf.language["iso-639-3"],
+                lang=self.conf.language["iso-639-1"],
                 selection="selection" if self.conf.categories else "all",
             )
 
