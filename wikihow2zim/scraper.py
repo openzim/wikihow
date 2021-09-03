@@ -357,7 +357,7 @@ class wikihow2zim(GlobalMixin):
             "Special:Sitemap",
             "wikiHow:Terms-of-Use",
         ]:
-            self.scrape_article(link, remove_link=True)
+            self.scrape_article(link, remove_all_links=True)
 
     def scrape_categories(self):
         logger.info("Starting scraping from categories")
