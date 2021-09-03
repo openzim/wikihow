@@ -519,6 +519,7 @@ class wikihow2zim(GlobalMixin):
             # page_inline_styles=self.metadata["article_inline_digest"],
             viewport_classes=" ".join(
                 soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
+                + ["wikihow-article"]
             ),
             title=title,
             **self.env_context,
