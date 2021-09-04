@@ -3,7 +3,10 @@ LABEL org.opencontainers.image.source https://github.com/openzim/wikihow
 
 # Install necessary packages
 RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends locales wget curl unzip libmagic1 \
+    && apt-get install -y --no-install-recommends locales libmagic1 wget ffmpeg \
+    libtiff5-dev libjpeg-dev libopenjp2-7-dev zlib1g-dev \
+    libfreetype6-dev liblcms2-dev libwebp-dev tcl8.6-dev tk8.6-dev python3-tk \
+    libharfbuzz-dev libfribidi-dev libxcb1-dev gifsicle curl unzip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
