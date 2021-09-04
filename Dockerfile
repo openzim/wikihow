@@ -20,7 +20,7 @@ ENV LC_ALL en_US.UTF-8
 
 # TEMP
 RUN wget --progress=dot:giga -L \
-    http://tmp.kiwix.org/wheels/libzim-1.0.0.dev2-cp38-cp38-manylinux1_x86_64.whl \
+    http://tmp.kiwix.org/wheels/libzim-1.0.0.dev3-cp38-cp38-manylinux1_x86_64.whl \
     http://tmp.kiwix.org/wheels/zimscraperlib-1.4.0.dev3-py3-none-any.whl \
     && pip3 install --no-cache-dir ./*.whl \
     && rm ./*.whl
