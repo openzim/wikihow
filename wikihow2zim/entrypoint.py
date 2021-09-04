@@ -63,9 +63,9 @@ def main():
     parser.add_argument(
         "--tag",
         help="Add tag to the ZIM file. "
-        "category:other and wikihow added automatically. Use --tag several times or "
+        "_category:wikihow and wikihow added automatically. Use --tag several times or "
         "separate with `;`",
-        default=["_category:other", "wikihow"],
+        default=[],
         action="append",
     )
 
