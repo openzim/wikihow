@@ -505,6 +505,8 @@ class wikihow2zim(GlobalMixin):
             "noscript:empty",
             # Q&A block
             "#qa >:not(#qa_answered_questions_container)",
+            # Expert Q&A
+            ".qa_heading sticking",
             "#qa_answered_questions_container #qa_aq_search_container, "
             "#qa_answered_questions_container #qa_add_curated_question",
             ".qa_answer_footer",
