@@ -22,6 +22,7 @@ from .utils import (
     get_digest,
     get_soup,
     get_soup_of,
+    get_subcategories_from,
     normalize_ident,
     parse_css,
     setup_s3_and_check_credentials,
@@ -432,7 +433,7 @@ class wikihow2zim(GlobalMixin):
 
         nb_pages = len(soup.select("#large_pagination ul li"))
 
-        sub_categories = get_categorylisting_url(soup, recurse)
+        sub_categories = get_subcategories_from(soup, recurse)
 
         # extract and clean main content
         content = soup.select("div#content_wrapper")[0]
