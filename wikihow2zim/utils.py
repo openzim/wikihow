@@ -97,6 +97,12 @@ def get_subcategories_from(soup: bs4.element.Tag, recurse: bool) -> List[str]:
         ]
 
 
+def get_categorylisting_url():
+    return urllib.parse.urlparse(
+        requests.get(to_url("/Special:CategoryListing")).url
+    ).path[1:]
+
+
 def get_youtube_id_from(url: str) -> str:
     """Youtube video Id from a youtube URL"""
     uri = urllib.parse.urlparse(url)

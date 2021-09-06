@@ -18,10 +18,10 @@ from .utils import (
     article_ident_for,
     cat_ident_for,
     fix_pagination_links,
+    get_categorylisting_url,
     get_digest,
     get_soup,
     get_soup_of,
-    get_subcategories_from,
     normalize_ident,
     parse_css,
     setup_s3_and_check_credentials,
@@ -116,6 +116,7 @@ class wikihow2zim(GlobalMixin):
             "logo": to_url(soup.select("a#footer_logo img")[0].attrs["src"]),
             "inline_styles": inline_styles,
             "linked_styles": linked_styles,
+            "url_special_category": get_categorylisting_url(),
         }
 
     def sanitize_inputs(self):
@@ -341,6 +342,7 @@ class wikihow2zim(GlobalMixin):
             title=self.conf.title,
             **self.env_context,
         )
+
         with self.lock:
             self.creator.add_item_for(
                 path=self.metadata["homepage_name"],
@@ -349,9 +351,13 @@ class wikihow2zim(GlobalMixin):
                 mimetype="text/html",
                 is_front=True,
             )
+            self.creator.add_redirect(
+                path=self.metadata["url_special_category"], target_path=DEFAULT_HOMEPAGE
+            )
+
             if DEFAULT_HOMEPAGE != self.metadata["homepage_name"]:
                 self.creator.add_redirect(
-                    DEFAULT_HOMEPAGE, self.metadata["homepage_name"]
+                    path=DEFAULT_HOMEPAGE, target_path=self.metadata["homepage_name"]
                 )
 
     def scrape_footer_articles(self):
@@ -426,7 +432,7 @@ class wikihow2zim(GlobalMixin):
 
         nb_pages = len(soup.select("#large_pagination ul li"))
 
-        sub_categories = get_subcategories_from(soup, recurse)
+        sub_categories = get_categorylisting_url(soup, recurse)
 
         # extract and clean main content
         content = soup.select("div#content_wrapper")[0]
