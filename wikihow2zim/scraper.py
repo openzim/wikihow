@@ -456,6 +456,7 @@ class wikihow2zim(GlobalMixin):
             page_linked_styles=self.get_style_urls(soup),
             viewport_classes=" ".join(
                 soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
+                + ["wikihow-category"]
             ),
             title=title,
             **self.env_context,

@@ -159,3 +159,7 @@ html[dir=rtl] a.external-link {
 #side_related_articles .related-wh .content-spacer {
     height: 150.257px;
 }
+/* Fix missing title on category page */
+html[lang=en] .wikihow-category .cat_grid a .content-spacer {
+    padding: 67px;
+}
