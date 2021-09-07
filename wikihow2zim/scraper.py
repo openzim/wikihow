@@ -20,7 +20,7 @@ from .utils import (
     fix_pagination_links,
     get_categorylisting_url,
     get_digest,
-    get_footer_crumbs,
+    get_footer_crumbs_from,
     get_soup,
     get_soup_of,
     get_subcategories_from,
@@ -353,7 +353,6 @@ class wikihow2zim(GlobalMixin):
                 mimetype="text/html",
                 is_front=True,
             )
-            print(self.metadata["url_special_category"])
             self.creator.add_redirect(
                 path=self.metadata["url_special_category"], target_path=DEFAULT_HOMEPAGE
             )
@@ -427,9 +426,6 @@ class wikihow2zim(GlobalMixin):
             articles.add(article_ident_for(link.attrs.get("href")))
 
         for article in articles:
-            if "organiser-une-soirée-cocktail" not in article:
-                continue
-            print(article)
             if not self.scrape_article(article):
                 missing_url = to_url(f"/{article}")
                 for a in soup.find_all("a", href=missing_url):
@@ -464,7 +460,7 @@ class wikihow2zim(GlobalMixin):
                 soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
                 + ["wikihow-category"]
             ),
-            bread_crumbs=get_footer_crumbs(soup),
+            bread_crumbs=get_footer_crumbs_from(soup),
             title=title,
             **self.env_context,
         )
@@ -543,7 +539,7 @@ class wikihow2zim(GlobalMixin):
                 soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
                 + ["wikihow-article"]
             ),
-            bread_crumbs=get_footer_crumbs(soup),
+            bread_crumbs=get_footer_crumbs_from(soup),
             title=title,
             **self.env_context,
         )
@@ -723,7 +719,6 @@ class wikihow2zim(GlobalMixin):
             self.add_homepage()
             self.scrape_categories()
             self.scrape_footer_articles()
-            # print(f"{self.metadata=}")
 
             logger.info(
                 f"Stats: {len(self.categories)} categories, "
