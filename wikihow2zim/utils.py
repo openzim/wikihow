@@ -58,6 +58,15 @@ def get_soup_of(text: str, unwrap: bool = False):
     return soup
 
 
+def get_footer_crumbs_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
+    """List of (url, name and title) of footer breadcrumbs"""
+    return [
+        (link.attrs["href"][1:], link.string, link.attrs.get("title"))
+        for link in soup.select("#footer_crumbs ul li a")
+        if link.attrs.get("href")
+    ]
+
+
 def get_soup(path: str, **params) -> bs4.BeautifulSoup:
     """an lxml soup of a path on source website"""
     return get_soup_of(fetch(path, **params))
@@ -98,9 +107,9 @@ def get_subcategories_from(soup: bs4.element.Tag, recurse: bool) -> List[str]:
 
 
 def get_categorylisting_url():
-    return urllib.parse.urlparse(
-        requests.get(to_url("/Special:CategoryListing")).url
-    ).path[1:]
+    return normalize_ident(
+        urllib.parse.urlparse(requests.get(to_url("/Special:CategoryListing")).url).path
+    )[1:]
 
 
 def get_youtube_id_from(url: str) -> str:

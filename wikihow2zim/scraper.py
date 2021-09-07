@@ -20,6 +20,7 @@ from .utils import (
     fix_pagination_links,
     get_categorylisting_url,
     get_digest,
+    get_footer_crumbs_from,
     get_soup,
     get_soup_of,
     get_subcategories_from,
@@ -449,6 +450,7 @@ class wikihow2zim(GlobalMixin):
         to_root = "./" + ("../" * path.count("/"))
 
         title = soup.find("title").string
+
         page = self.env.get_template("category.html").render(
             to_root=to_root,
             body_classes=" ".join(soup.find("body").attrs.get("class", [])),
@@ -458,6 +460,7 @@ class wikihow2zim(GlobalMixin):
                 soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
                 + ["wikihow-category"]
             ),
+            bread_crumbs=get_footer_crumbs_from(soup),
             title=title,
             **self.env_context,
         )
@@ -536,6 +539,7 @@ class wikihow2zim(GlobalMixin):
                 soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
                 + ["wikihow-article"]
             ),
+            bread_crumbs=get_footer_crumbs_from(soup),
             title=title,
             **self.env_context,
         )

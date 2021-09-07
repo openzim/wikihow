@@ -50,8 +50,15 @@
                         <img src="{{ to_root }}assets/logo" alt="wikiHow" width="162" height="42">
                     </a>
 
-                    <div id="footer_crumbs"><ul class="breadcrumbs"></ul></div>
-
+                    <div id="footer_crumbs">
+                        {% if bread_crumbs %}
+                            <ul class="breadcrumbs">
+                                {% for crumb in bread_crumbs %}
+                                    <li><a href="{{ crumb.0 }}" title="{{ crumb.2 }}">{{ crumb.1 }}</a></li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
                     <div id="footer_top_divider" class="footer_divider"></div>
                     <!-- <div id="footer_vertical_divider"></div> -->
 
