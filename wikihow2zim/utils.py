@@ -67,6 +67,25 @@ def get_footer_crumbs_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
     ]
 
 
+def get_footer_links_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
+    """List of (url, name and title) of footer breadcrumbs"""
+    links = []
+    for link in soup.select("#footer_links ul li a"):
+        lhref = link.attrs.get("href")
+        if not lhref or lhref == "#":
+            continue
+        links.append(
+            [
+                normalize_ident(
+                    urllib.parse.urlparse(requests.get(to_url(lhref)).url).path[1:]
+                ),
+                link.string,
+                link.attrs.get("title"),
+            ]
+        )
+    return links
+
+
 def get_soup(path: str, **params) -> bs4.BeautifulSoup:
     """an lxml soup of a path on source website"""
     return get_soup_of(fetch(path, **params))
