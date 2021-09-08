@@ -523,6 +523,7 @@ class wikihow2zim(GlobalMixin):
             ".qa_no_answered",
             "#qa_see_more_answered",
             "#userreview_recipe_cta",
+            "#aboutthisarticle > div.page_stats.section_text",
         )
         for selector in black_list:
             _ = [elem.decompose() for elem in content.select(selector)]
