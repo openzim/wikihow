@@ -438,10 +438,16 @@ class wikihow2zim(GlobalMixin):
 
         # extract and clean main content
         content = soup.select("div#content_wrapper")[0]
-        _ = [elem.decompose() for elem in content.find_all("script")]
-        _ = [elem.decompose() for elem in content.select("noscript > img")]
-        _ = [elem.decompose() for elem in content.select("noscript:empty")]
-        _ = [elem.decompose() for elem in content.select("#cat_wca")]
+
+        black_list = (
+            "script",
+            "noscript > img",
+            "noscript:empty",
+            "#cat_wca",
+            ".cat-promo",
+        )
+        for selector in black_list:
+            _ = [elem.decompose() for elem in content.select(selector)]
 
         path = f"{self.metadata['category_prefix']}:{category}"
         if page_num > 1:
@@ -517,6 +523,7 @@ class wikihow2zim(GlobalMixin):
             ".qa_no_answered",
             "#qa_see_more_answered",
             "#userreview_recipe_cta",
+            "#aboutthisarticle > div.page_stats.section_text",
         )
         for selector in black_list:
             _ = [elem.decompose() for elem in content.select(selector)]
