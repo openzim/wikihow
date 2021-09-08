@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import collections
 import io
 import re
 import urllib.parse
@@ -13,6 +14,7 @@ import cssbeautifier
 import requests
 from kiwixstorage import KiwixStorage
 from pif import get_public_ip
+from tld import get_fld
 from zimscraperlib.download import stream_file
 
 from .shared import Global, logger
@@ -65,6 +67,31 @@ def get_footer_crumbs_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
         for link in soup.select("#footer_crumbs ul li a")
         if link.attrs.get("href")
     ]
+
+
+def get_footer_links_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
+    """List of (url, name and title) of footer breadcrumbs"""
+    links = []
+    fld = get_fld(Global.conf.main_url.geturl())
+    nlink = collections.namedtuple("Link", ("path", "name", "title"))
+    for link in soup.select("#footer_links ul li a"):
+        if link.attrs.get("href") in (
+            "#",
+            "https://blog.wikihow.com/",
+            "/wikiHow:Jobs",
+            "https://www.wikihow.com/wikiHow:Contribute",
+        ):
+            continue
+
+        path = None
+        if link.attrs.get("href"):
+            url = urllib.parse.urlparse(to_url(link.attrs["href"]))
+            if get_fld(url.geturl()) != fld:
+                continue
+            path = normalize_ident(url.path)[1:]
+
+        links.append(nlink(path, link.string, link.attrs.get("title")))
+    return links
 
 
 def get_soup(path: str, **params) -> bs4.BeautifulSoup:
