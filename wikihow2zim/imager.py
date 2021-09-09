@@ -80,8 +80,10 @@ class Imager:
 
         # skip processing if we already processed it or have it in pipe
         digest = get_digest(url.geturl())
+        is_svg = url.path.endswith(".svg")
+        suffix = ".svg" if is_svg else ".webp"
         if path is None:
-            path = f"images/{digest}"
+            path = f"images/{digest}{suffix}"
 
         if digest in self.handled:
             logger.debug(f"URL `{url.geturl()}` already processed.")
@@ -95,6 +97,7 @@ class Imager:
             self.process_image,
             url=url,
             path=path,
+            mimetype="image/svg+xml" if is_svg else "image/webp",
             dont_release=True,
         )
 
@@ -105,7 +108,7 @@ class Imager:
         self.nb_done += 1
         logger.debug(f"Images {self.nb_done}/{self.nb_requested}")
 
-    def process_image(self, url: str, path) -> str:
+    def process_image(self, url: str, path, mimetype: str) -> str:
         """download image from url or S3 and add to Zim at path. Upload if req."""
 
         if self.aborted:
@@ -117,6 +120,7 @@ class Imager:
                 Global.creator.add_item_for(
                     path=path,
                     content=self.get_image_data(url.geturl()).getvalue(),
+                    mimetype=mimetype,
                     callback=self.once_done,
                 )
             return path
@@ -148,6 +152,7 @@ class Imager:
                 Global.creator.add_item_for(
                     path=path,
                     content=fileobj.getvalue(),
+                    mimetype=mimetype,
                     callback=self.once_done,
                 )
             return path
@@ -164,6 +169,7 @@ class Imager:
             Global.creator.add_item_for(
                 path=path,
                 content=fileobj.getvalue(),
+                mimetype=mimetype,
                 callback=self.once_done,
             )
 

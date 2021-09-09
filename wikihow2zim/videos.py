@@ -152,7 +152,7 @@ class VideoGrabber:
 
         digest = get_digest(url.geturl())
         if path is None:
-            path = f"videos/{digest}"
+            path = f"videos/{digest}.webm"
 
         # skip processing if we already processed it or have it in pipe
         if digest in self.handled:
@@ -190,6 +190,7 @@ class VideoGrabber:
                     path=path,
                     fpath=self.get_video_fpath(url.geturl(), is_youtube),
                     delete_fpath=True,
+                    mimetype="video/webm",
                     callback=self.once_done,
                 )
             return path
@@ -224,6 +225,7 @@ class VideoGrabber:
                 Global.creator.add_item_for(
                     path=path,
                     content=fileobj.getvalue(),
+                    mimetype="video/webm",
                     callback=self.once_done,
                 )
             return path
@@ -241,6 +243,7 @@ class VideoGrabber:
                 path=path,
                 fpath=fpath,
                 delete_fpath=True,
+                mimetype="video/webm",
                 callback=self.once_done,
             )
 
