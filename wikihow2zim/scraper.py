@@ -709,7 +709,6 @@ class wikihow2zim(GlobalMixin):
         self.creator.start()
 
         try:
-
             self.add_illustrations()
             self.add_assets()
             self.env_context.update(
