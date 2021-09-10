@@ -21,6 +21,7 @@ from .utils import (
     get_categorylisting_url,
     get_digest,
     get_footer_crumbs_from,
+    get_footer_links_from,
     get_soup,
     get_soup_of,
     get_subcategories_from,
@@ -119,6 +120,7 @@ class wikihow2zim(GlobalMixin):
             "inline_styles": inline_styles,
             "linked_styles": linked_styles,
             "url_special_category": get_categorylisting_url(),
+            "footer_links": get_footer_links_from(soup),
         }
 
     def sanitize_inputs(self):
@@ -341,6 +343,7 @@ class wikihow2zim(GlobalMixin):
             viewport_classes=" ".join(
                 soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
             ),
+            footer_links=self.metadata["footer_links"],
             title=self.conf.title,
             **self.env_context,
         )
@@ -363,14 +366,12 @@ class wikihow2zim(GlobalMixin):
                 )
 
     def scrape_footer_articles(self):
-
-        for link in [
-            "wikiHow:About-wikiHow",
-            "wikiHow:Contact-Us",
-            "Special:Sitemap",
-            "wikiHow:Terms-of-Use",
-        ]:
-            self.scrape_article(link, remove_all_links=True)
+        """Scrape and create all pages found in footer links"""
+        for link in self.metadata["footer_links"]:
+            # there might be a link to Main-Page which would try (and fail)
+            # to create wikiHo Main-Page (already added a redirect in homepage)
+            if link.path and link.path != "Main-Page":
+                self.scrape_article(link.path, remove_all_links=True)
 
     def scrape_categories(self):
         logger.info("Starting scraping from categories")
@@ -431,6 +432,7 @@ class wikihow2zim(GlobalMixin):
                 for a in soup.find_all("a", href=missing_url):
                     del a["href"]
                 self.record_missing_url(missing_url)
+            # break  # only one article per page
 
         nb_pages = len(soup.select("#large_pagination ul li"))
 
@@ -466,6 +468,7 @@ class wikihow2zim(GlobalMixin):
                 soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
                 + ["wikihow-category"]
             ),
+            footer_links=self.metadata["footer_links"],
             bread_crumbs=get_footer_crumbs_from(soup),
             title=title,
             **self.env_context,
@@ -492,7 +495,7 @@ class wikihow2zim(GlobalMixin):
             soup = get_soup(f"/{article}")
         except requests.exceptions.HTTPError as exc:
             if exc.response.status_code == 404:
-                logger.debug(">>> HTTP 404, skipping.")
+                logger.warning(">>> HTTP 404, skipping.")
                 return False
             raise exc
 
@@ -546,6 +549,7 @@ class wikihow2zim(GlobalMixin):
                 soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
                 + ["wikihow-article"]
             ),
+            footer_links=self.metadata["footer_links"],
             bread_crumbs=get_footer_crumbs_from(soup),
             title=title,
             **self.env_context,
@@ -723,9 +727,10 @@ class wikihow2zim(GlobalMixin):
             if not self.conf.categories:
                 self.build_categories_list()
 
+            # start adding ZIM pages
             self.add_homepage()
-            self.scrape_categories()
             self.scrape_footer_articles()
+            self.scrape_categories()
 
             logger.info(
                 f"Stats: {len(self.categories)} categories, "

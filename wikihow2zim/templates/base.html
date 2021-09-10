@@ -54,7 +54,7 @@
                         {% if bread_crumbs %}
                             <ul class="breadcrumbs">
                                 {% for crumb in bread_crumbs %}
-                                    <li><a href="{{ crumb.0 }}" title="{{ crumb.2 }}">{{ crumb.1 }}</a></li>
+                                    <li><a href="{{ to_root }}{{ crumb.0 }}" title="{{ crumb.2 }}">{{ crumb.1 }}</a></li>
                                 {% endfor %}
                             </ul>
                         {% endif %}
@@ -68,13 +68,9 @@
 
                     <div id="footer_links">
                         <ul>
-                            <li><a href="{{ to_root }}{{ homepage_name }}" class="mw-redirect" title="Main Page">Home</a></li>
-                            <li><a href="{{ to_root }}wikiHow:About-wikiHow">About wikiHow</a></li>
-                            <li><a href="{{ to_root }}Experts">Experts</a></li>
-                            <li><a href="{{ to_root }}wikiHow:Contact-Us">Contact Us</a></li>
-                            <li><a href="{{ to_root }}Special:Sitemap">Site Map</a></li>
-                            <li><a href="{{ to_root }}wikiHow:Terms-of-Use">Terms of Use</a></li>
-                            <!-- <li><a href="{{ to_root }}wikiHow:Privacy-Policy">Privacy Policy</a></li> -->
+                            {% for link in footer_links %}
+                                <li><a {% if link.path %}href="{{to_root}}{{ link.path }}"{% endif %} title="{{ link.title }}">{{ link.name }}</a></li>
+                            {% endfor %}
                         </ul>
                     </div>
                     <div id="sf"></div>
