@@ -65,6 +65,7 @@ class wikihow2zim(GlobalMixin):
         # we need to track them for later use
         self.missing_articles = set()
         self.missing_categories = set()
+        self.related_articles = set()
 
     @property
     def build_dir(self):
@@ -373,6 +374,12 @@ class wikihow2zim(GlobalMixin):
             if link.path and link.path != "Main-Page":
                 self.scrape_article(link.path, remove_all_links=True)
 
+    def scrape_related_articles(self):
+        """Scrape and create all pages found in section reladed links"""
+        for link in list(self.related_articles):
+            if self.scrape_article(link[1:]) is None:
+                self.related_articles.remove(link)
+
     def scrape_categories(self):
         logger.info("Starting scraping from categories")
 
@@ -534,6 +541,13 @@ class wikihow2zim(GlobalMixin):
         if remove_all_links:
             for elem in content.select("a[href]"):
                 del elem.attrs["href"]
+
+        for link in content.select(
+            "#bodyContent > div.section.relatedwikihows.sticky a[href]"
+        ):
+            rel_article = link.attrs["href"]
+            if rel_article not in self.articles:
+                self.related_articles.add(normalize_ident(rel_article))
 
         self.handle_videos_for(soup)
 
@@ -731,12 +745,14 @@ class wikihow2zim(GlobalMixin):
             self.add_homepage()
             self.scrape_footer_articles()
             self.scrape_categories()
+            self.scrape_related_articles()
 
             logger.info(
                 f"Stats: {len(self.categories)} categories, "
                 f"{len(self.articles)} articles, "
                 f"{len(self.missing_categories)} missing categories, "
                 f"{len(self.missing_articles)} missing articles, "
+                f"{len(self.related_articles)} related articles, "
                 f"{self.imager.nb_requested} images, "
                 f"{self.vidgrabber.nb_requested} videos"
             )
