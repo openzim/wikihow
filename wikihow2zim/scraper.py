@@ -366,9 +366,11 @@ class wikihow2zim(GlobalMixin):
                 )
 
     def scrape_footer_articles(self):
-
+        """Scrape and create all pages found in footer links"""
         for link in self.metadata["footer_links"]:
-            if link.path:
+            # there might be a link to Main-Page which would try (and fail)
+            # to create wikiHo Main-Page (already added a redirect in homepage)
+            if link.path and link.path != "Main-Page":
                 self.scrape_article(link.path, remove_all_links=True)
 
     def scrape_categories(self):
@@ -430,6 +432,7 @@ class wikihow2zim(GlobalMixin):
                 for a in soup.find_all("a", href=missing_url):
                     del a["href"]
                 self.record_missing_url(missing_url)
+            # break  # only one article per page
 
         nb_pages = len(soup.select("#large_pagination ul li"))
 
@@ -724,9 +727,10 @@ class wikihow2zim(GlobalMixin):
             if not self.conf.categories:
                 self.build_categories_list()
 
+            # start adding ZIM pages
             self.add_homepage()
-            self.scrape_categories()
             self.scrape_footer_articles()
+            self.scrape_categories()
 
             logger.info(
                 f"Stats: {len(self.categories)} categories, "
