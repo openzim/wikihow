@@ -70,10 +70,13 @@ def get_footer_crumbs_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
 
 
 def get_footer_links_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
-    """List of (url, name and title) of footer breadcrumbs"""
+    """list of namedtuple(path, name, title) of footer links"""
     links = []
+
     fld = get_fld(Global.conf.main_url.geturl())
     nlink = collections.namedtuple("Link", ("path", "name", "title"))
+
+    # Skip some links with no offline value
     for link in soup.select("#footer_links ul li a"):
         if link.attrs.get("href") in (
             "#",
@@ -86,6 +89,8 @@ def get_footer_links_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
         path = None
         if link.attrs.get("href"):
             url = urllib.parse.urlparse(to_url(link.attrs["href"]))
+
+            # skip external URLs (if any)
             if get_fld(url.geturl()) != fld:
                 continue
             path = normalize_ident(url.path)[1:]
