@@ -3,6 +3,7 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import io
+import pathlib
 import re
 import urllib.parse
 from typing import Optional, Union
@@ -19,6 +20,7 @@ from .utils import (
     get_digest,
     get_version_ident_for,
     get_youtube_id_from,
+    normalize_ident,
     normalize_youtube_url,
 )
 
@@ -131,6 +133,11 @@ class VideoGrabber:
         """S3 key to use for that url"""
         return re.sub(r"^(https?)://", r"\1/", url)
 
+    def get_path_for(self, url: urllib.parse.ParseResult) -> str:
+        suffix = ".webm"
+        digest = get_digest(url.geturl())
+        return f"videos/{digest}-{normalize_ident(pathlib.Path(url.path).stem)}{suffix}"
+
     def defer(
         self,
         url: str,
@@ -151,8 +158,7 @@ class VideoGrabber:
             return
 
         digest = get_digest(url.geturl())
-        if path is None:
-            path = f"videos/{digest}.webm"
+        path = self.get_path_for(url) if path is None else path
 
         # skip processing if we already processed it or have it in pipe
         if digest in self.handled:

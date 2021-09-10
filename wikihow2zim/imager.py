@@ -15,7 +15,7 @@ from zimscraperlib.image.optimization import optimize_webp
 
 from .constants import IMAGES_ENCODER_VERSION
 from .shared import Global
-from .utils import get_digest, get_version_ident_for, to_url
+from .utils import get_digest, get_version_ident_for, normalize_ident, to_url
 
 logger = Global.logger
 
@@ -59,6 +59,11 @@ class Imager:
         """S3 key to use for that url"""
         return re.sub(r"^(https?)://", r"\1/", url)
 
+    def get_path_for(self, url: urllib.parse.ParseResult) -> str:
+        suffix = ".svg" if url.path.endswith(".svg") else ".webp"
+        digest = get_digest(url.geturl())
+        return f"images/{digest}-{normalize_ident(pathlib.Path(url.path).stem)}{suffix}"
+
     def defer(
         self,
         url: str,
@@ -80,10 +85,7 @@ class Imager:
 
         # skip processing if we already processed it or have it in pipe
         digest = get_digest(url.geturl())
-        is_svg = url.path.endswith(".svg")
-        suffix = ".svg" if is_svg else ".webp"
-        if path is None:
-            path = f"images/{digest}{suffix}"
+        path = self.get_path_for(url) if path is None else path
 
         if digest in self.handled:
             logger.debug(f"URL `{url.geturl()}` already processed.")
@@ -97,7 +99,7 @@ class Imager:
             self.process_image,
             url=url,
             path=path,
-            mimetype="image/svg+xml" if is_svg else "image/webp",
+            mimetype="image/svg+xml" if path.endswith(".svg") else "image/webp",
             dont_release=True,
         )
 
@@ -108,7 +110,7 @@ class Imager:
         self.nb_done += 1
         logger.debug(f"Images {self.nb_done}/{self.nb_requested}")
 
-    def process_image(self, url: str, path, mimetype: str) -> str:
+    def process_image(self, url: str, path: str, mimetype: str) -> str:
         """download image from url or S3 and add to Zim at path. Upload if req."""
 
         if self.aborted:
