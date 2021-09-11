@@ -543,7 +543,7 @@ class wikihow2zim(GlobalMixin):
             _ = [elem.decompose() for elem in content.select(selector)]
 
         # Remove link of page of author
-        for link in content.select("#byline_info > a[href]"):
+        for link in content.select("#coauthor_byline #byline_info > a[href]"):
             del link.attrs["href"]
 
         if remove_all_links:
