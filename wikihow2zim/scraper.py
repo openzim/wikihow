@@ -65,6 +65,9 @@ class wikihow2zim(GlobalMixin):
         # we need to track them for later use
         self.missing_articles = set()
         self.missing_categories = set()
+        # set of all articles we've seen in related-articles links.
+        # we'll go over this at end of categories scrape.
+        # those left are not listed in any category
         self.related_articles = set()
 
     @property
@@ -439,7 +442,7 @@ class wikihow2zim(GlobalMixin):
                 for a in soup.find_all("a", href=missing_url):
                     del a["href"]
                 self.record_missing_url(missing_url)
-            # break  # only one article per page
+            break  # only one article per page
 
         nb_pages = len(soup.select("#large_pagination ul li"))
 
@@ -542,12 +545,10 @@ class wikihow2zim(GlobalMixin):
             for elem in content.select("a[href]"):
                 del elem.attrs["href"]
 
-        for link in content.select(
-            "#bodyContent > div.section.relatedwikihows.sticky a[href]"
-        ):
-            rel_article = link.attrs["href"]
+        for link in content.select("div.section.relatedwikihows a[href]"):
+            rel_article = normalize_ident(link.attrs["href"])
             if rel_article not in self.articles:
-                self.related_articles.add(normalize_ident(rel_article))
+                self.related_articles.add(rel_article)
 
         self.handle_videos_for(soup)
 
