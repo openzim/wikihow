@@ -2,6 +2,7 @@
 
 import datetime
 import pathlib
+import re
 import shutil
 
 import bs4
@@ -378,9 +379,9 @@ class wikihow2zim(GlobalMixin):
                 self.scrape_article(link.path, remove_all_links=True)
 
     def scrape_related_articles(self):
-        """Scrape and create all pages found in section reladed links"""
+        """Scrape and create all pages found in section related links"""
         for link in list(self.related_articles):
-            if self.scrape_article(link[1:]) is None:
+            if self.scrape_article(link) is None:
                 self.related_articles.remove(link)
 
     def scrape_categories(self):
@@ -442,7 +443,7 @@ class wikihow2zim(GlobalMixin):
                 for a in soup.find_all("a", href=missing_url):
                     del a["href"]
                 self.record_missing_url(missing_url)
-            break  # only one article per page
+            # break  # only one article per page
 
         nb_pages = len(soup.select("#large_pagination ul li"))
 
@@ -546,7 +547,7 @@ class wikihow2zim(GlobalMixin):
                 del elem.attrs["href"]
 
         for link in content.select("div.section.relatedwikihows a[href]"):
-            rel_article = normalize_ident(link.attrs["href"])
+            rel_article = re.sub(r"^/", "", normalize_ident(link.attrs["href"]))
             if rel_article not in self.articles:
                 self.related_articles.add(rel_article)
 
