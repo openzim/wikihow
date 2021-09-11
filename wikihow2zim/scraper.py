@@ -542,6 +542,10 @@ class wikihow2zim(GlobalMixin):
         for selector in black_list:
             _ = [elem.decompose() for elem in content.select(selector)]
 
+        # Remove link of page of author
+        for link in content.select("#coauthor_byline #byline_info > a[href]"):
+            del link.attrs["href"]
+
         if remove_all_links:
             for elem in content.select("a[href]"):
                 del elem.attrs["href"]
