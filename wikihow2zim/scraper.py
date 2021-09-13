@@ -2,6 +2,7 @@
 
 import datetime
 import pathlib
+import random
 import re
 import shutil
 
@@ -32,6 +33,12 @@ from .utils import (
     soup_link_finder,
     to_url,
 )
+
+
+class DomIntegrityError(Exception):
+    def __init__(self, message=""):
+        self.message = message
+        super().__init__(self.message)
 
 
 class wikihow2zim(GlobalMixin):
@@ -694,6 +701,51 @@ class wikihow2zim(GlobalMixin):
                 )
             )
 
+    def check_dom_integrity(self):
+        # check category listing page
+        cl_soup = get_soup("/Special:CategoryListing")
+        if not cl_soup.select("#content_wrapper"):
+            raise DomIntegrityError("#content_wrapper not found")
+
+        category_links = cl_soup.select("#catlist_container #catlist a")
+
+        if not category_links:
+            raise DomIntegrityError("No links in #catlist_container")
+
+        category_link = category_links[
+            random.randint(0, len(category_links))
+        ].attrs.get("href")
+        if not category_link:
+            raise DomIntegrityError("Category link has no href")
+
+        # Category link prefix control
+        if not re.findall(":", category_link):
+            raise DomIntegrityError("has not category link")
+
+        logger.info("Check integrity : Special:CategoryListing OK")
+
+        # Category page checker
+        # Verification of the presence of the list of for one category
+        soup_category_page = get_soup(normalize_ident(category_link))
+        if not soup_category_page.select("#cat_all > div.cat_grid"):
+            raise DomIntegrityError("Category page is not")
+
+        logger.info("Check integrity : Category page  OK")
+
+        # Article page checker
+        soup = get_soup("/Special:Randomizer")
+
+        # Verification of the presence of the title for article
+        if not soup.select("#content_inner > div.pre-content h1"):
+            raise DomIntegrityError(
+                "h1 has not found in #content_inner > div.pre-content"
+            )
+
+        if not soup.select("#content_wrapper"):
+            raise DomIntegrityError("#content_wrapper not found")
+
+        logger.info("Check integrity : article page  OK")
+
     def run(self):
         s3_storage = (
             setup_s3_and_check_credentials(self.conf.s3_url_with_credentials)
@@ -719,6 +771,7 @@ class wikihow2zim(GlobalMixin):
             f"{', '.join(self.conf.categories)if self.conf.categories else 'all'}"
             f"{s3_msg}"
         )
+        self.check_dom_integrity()
 
         self.metadata = self.get_online_metadata()
         logger.debug(
