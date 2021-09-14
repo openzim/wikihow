@@ -700,10 +700,15 @@ class wikihow2zim(GlobalMixin):
             )
 
     def check_dom_integrity(self):
-        """Check DOM Integrity"""
+        """Checking wikiHow DOM Integrity
+
+        Verifying that the elements we rely on for the scrape are in place
+        so we can fail early if not: meaning source changed significantly"""
 
         # Verification of the presence of block #content_wrapper
-        logger.info("DOM integrity checking")
+        logger.info("Ensuring source site DOM Integrity")
+        logger.debug("> checking CategoryListing")
+
         soup = get_soup("/Special:CategoryListing")
         if not soup.select("#content_wrapper"):
             raise DomIntegrityError("#content_wrapper not found")
@@ -712,6 +717,9 @@ class wikihow2zim(GlobalMixin):
         if not category_links:
             raise DomIntegrityError("No links in #catlist_container")
 
+        # selecting a randon element in the list of links.
+        # these links should all be Category links
+        # we'll reuse selected link to check Category page later
         category_link = category_links[
             random.randint(0, len(category_links))
         ].attrs.get("href")
@@ -721,25 +729,20 @@ class wikihow2zim(GlobalMixin):
         # Category link prefix control
         if not re.findall(":", category_link):
             raise DomIntegrityError("has not category link")
+        logger.debug("> checking Category Page")
 
-        logger.info("DOM Integrity. Verifying CategoryListing")
-
-        # Recovery of a category page
+        # Category page is mostly a grid listing articles in the Category
         soup = get_soup(normalize_ident(category_link))
         if not soup.select("#cat_all > div.cat_grid"):
             raise DomIntegrityError("Category page is not")
-        logger.info("DOM Integrity. Verifying Category")
+        logger.debug("> checking Article Page")
 
-        # Recovery of an article at random
+        # Using Randomizer to select a random article from source website
         soup = get_soup("/Special:Randomizer")
 
-        # Verification of the presence of the title for article
+        # Checking that we have a title where expected
         if not soup.select("#content_inner > div.pre-content h1"):
             raise DomIntegrityError("Article title not found (h1)")
-
-        if not soup.select("#content_wrapper"):
-            raise DomIntegrityError("#content_wrapper not found")
-        logger.info("DOM Integrity. Verifying Article")
 
     def run(self):
         s3_storage = (
