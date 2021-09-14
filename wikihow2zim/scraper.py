@@ -36,9 +36,7 @@ from .utils import (
 
 
 class DomIntegrityError(Exception):
-    def __init__(self, message=""):
-        self.message = message
-        super().__init__(self.message)
+    pass
 
 
 class wikihow2zim(GlobalMixin):
@@ -702,12 +700,14 @@ class wikihow2zim(GlobalMixin):
             )
 
     def check_dom_integrity(self):
-        # check category listing page
-        cl_soup = get_soup("/Special:CategoryListing")
-        if not cl_soup.select("#content_wrapper"):
-            raise DomIntegrityError("#content_wrapper not found")
+        """Check DOM Integrity"""
 
-        category_links = cl_soup.select("#catlist_container #catlist a")
+        # Verification of the presence of block #content_wrapper
+        logger.info("DOM integrity checking")
+        soup = get_soup("/Special:CategoryListing")
+        if not soup.select("#content_wrapper"):
+            raise DomIntegrityError("#content_wrapper not found")
+        category_links = soup.select("#catlist_container #catlist a")
 
         if not category_links:
             raise DomIntegrityError("No links in #catlist_container")
@@ -722,29 +722,24 @@ class wikihow2zim(GlobalMixin):
         if not re.findall(":", category_link):
             raise DomIntegrityError("has not category link")
 
-        logger.info("Check integrity : Special:CategoryListing OK")
+        logger.info("DOM Integrity. Verifying CategoryListing")
 
-        # Category page checker
-        # Verification of the presence of the list of for one category
-        soup_category_page = get_soup(normalize_ident(category_link))
-        if not soup_category_page.select("#cat_all > div.cat_grid"):
+        # Recovery of a category page
+        soup = get_soup(normalize_ident(category_link))
+        if not soup.select("#cat_all > div.cat_grid"):
             raise DomIntegrityError("Category page is not")
+        logger.info("DOM Integrity. Verifying Category")
 
-        logger.info("Check integrity : Category page  OK")
-
-        # Article page checker
+        # Recovery of an article at random
         soup = get_soup("/Special:Randomizer")
 
         # Verification of the presence of the title for article
         if not soup.select("#content_inner > div.pre-content h1"):
-            raise DomIntegrityError(
-                "h1 has not found in #content_inner > div.pre-content"
-            )
+            raise DomIntegrityError("Article title not found (h1)")
 
         if not soup.select("#content_wrapper"):
             raise DomIntegrityError("#content_wrapper not found")
-
-        logger.info("Check integrity : article page  OK")
+        logger.info("DOM Integrity. Verifying Article")
 
     def run(self):
         s3_storage = (
