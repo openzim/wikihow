@@ -41,6 +41,8 @@ class Rewriter(GlobalMixin):
 
         self.rewrite_links(soup, to_root)
 
+        self.rewrite_pictures(soup, to_root)
+
         self.rewrite_images(soup, to_root)
 
         return str(soup)
@@ -119,6 +121,9 @@ class Rewriter(GlobalMixin):
 
     def rewrite_images(self, soup, to_root):
         for img in soup.find_all("img"):
+            if img.attrs.get("onload"):
+                del img.attrs["onload"]
+
             if not img.get("src") and not img.get("data-src"):
                 continue
 
@@ -141,3 +146,13 @@ class Rewriter(GlobalMixin):
                 del img["src"]
             else:
                 img["src"] = f"{to_root}{path}"
+
+    def rewrite_pictures(self, soup, to_root):
+        for picture in soup.find_all("picture"):
+            # there's no fallback img, we can't remove sources
+            if not picture.find("img"):
+                continue
+
+            for child in picture.contents:
+                if child.name != "img":
+                    child.decompose()

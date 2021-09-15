@@ -532,6 +532,8 @@ class wikihow2zim(GlobalMixin):
             ".wh_ad_inner, .wh_ad_active, [data-service=adsense], .wh_ad_spacing",
             "noscript > img",
             "noscript:empty",
+            # User success stories
+            "#userreviews_mobile",
             # Q&A block
             "#qa >:not(#qa_answered_questions_container)",
             # Expert Q&A
