@@ -706,7 +706,9 @@ class wikihow2zim(GlobalMixin):
         so we can fail early if not: meaning source changed significantly"""
 
         logger.info("Ensuring source site DOM Integrity")
+
         logger.debug("> checking CategoryListing")
+
         soup = get_soup("/Special:CategoryListing")
         if not soup.select("#content_wrapper"):
             raise DomIntegrityError("#content_wrapper not found")
@@ -718,28 +720,31 @@ class wikihow2zim(GlobalMixin):
         # selecting a randon element in the list of links.
         # these links should all be Category links
         # we'll reuse selected link to check Category page later
-        category_link = normalize_ident(
-            category_links[random.randint(0, len(category_links))].attrs.get("href")
-        )
+        category_link = category_links[
+            random.randint(0, len(category_links))
+        ].attrs.get("href")
         if not category_link:
             raise DomIntegrityError("Category link has no href")
 
-        # Category link prefix control
+        # Making sure it was an actual Category link
+        category_id = cat_ident_for(category_link)
         if not re.findall(":", category_link):
             raise DomIntegrityError("has not category link")
 
-        response = requests.get(to_url(f"/category:{category_link.split(':')[1]}"))
-        if response.status_code != 200:
-            raise DomIntegrityError("Category page not found")
+        resp = requests.get(to_url(f"/Category:{category_id}"))
+        if resp.status_code != 200:
+            raise DomIntegrityError(f"Category link if not valid ({resp})")
 
-        if normalize_ident(response.url) != to_url(category_link):
-            raise DomIntegrityError("Category link is not correct")
+        if resp.url != to_url(category_link):
+            raise DomIntegrityError("Category link is not an actual Category")
+
         logger.debug("> checking Category Page")
 
         # Category page is mostly a grid listing articles in the Category
-        soup = get_soup(category_link)
+        soup = get_soup(f"/Category:{category_id}")
         if not soup.select("#cat_all > div.cat_grid"):
-            raise DomIntegrityError("Not article list found in the #cat_grid")
+            raise DomIntegrityError("Article list not found in #cat_grid")
+
         logger.debug("> checking Article Page")
 
         # Using Randomizer to select a random article from source website
