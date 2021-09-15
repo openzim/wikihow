@@ -2,6 +2,7 @@
 
 import datetime
 import pathlib
+import random
 import re
 import shutil
 
@@ -32,6 +33,10 @@ from .utils import (
     soup_link_finder,
     to_url,
 )
+
+
+class DomIntegrityError(Exception):
+    pass
 
 
 class wikihow2zim(GlobalMixin):
@@ -694,6 +699,61 @@ class wikihow2zim(GlobalMixin):
                 )
             )
 
+    def check_dom_integrity(self):
+        """Checking wikiHow DOM Integrity
+
+        Verifying that the elements we rely on for the scrape are in place
+        so we can fail early if not: meaning source changed significantly"""
+
+        logger.info("Ensuring source site DOM Integrity")
+
+        logger.debug("> checking CategoryListing")
+
+        soup = get_soup("/Special:CategoryListing")
+        if not soup.select("#content_wrapper"):
+            raise DomIntegrityError("#content_wrapper not found")
+        category_links = soup.select("#catlist_container #catlist a")
+
+        if not category_links:
+            raise DomIntegrityError("No links in #catlist_container")
+
+        # selecting a randon element in the list of links.
+        # these links should all be Category links
+        # we'll reuse selected link to check Category page later
+        category_link = category_links[
+            random.randint(0, len(category_links))
+        ].attrs.get("href")
+        if not category_link:
+            raise DomIntegrityError("Category link has no href")
+
+        # Making sure it was an actual Category link
+        category_id = cat_ident_for(category_link)
+        if not re.findall(":", category_link):
+            raise DomIntegrityError("has not category link")
+
+        resp = requests.get(to_url(f"/Category:{category_id}"))
+        if resp.status_code != 200:
+            raise DomIntegrityError(f"Category link if not valid ({resp})")
+
+        if resp.url != to_url(category_link):
+            raise DomIntegrityError("Category link is not an actual Category")
+
+        logger.debug("> checking Category Page")
+
+        # Category page is mostly a grid listing articles in the Category
+        soup = get_soup(f"/Category:{category_id}")
+        if not soup.select("#cat_all > div.cat_grid"):
+            raise DomIntegrityError("Article list not found in #cat_grid")
+
+        logger.debug("> checking Article Page")
+
+        # Using Randomizer to select a random article from source website
+        soup = get_soup("/Special:Randomizer")
+
+        # Checking that we have a title where expected
+        if not soup.select("#content_inner > div.pre-content h1"):
+            raise DomIntegrityError("Article title not found (h1)")
+
     def run(self):
         s3_storage = (
             setup_s3_and_check_credentials(self.conf.s3_url_with_credentials)
@@ -719,6 +779,7 @@ class wikihow2zim(GlobalMixin):
             f"{', '.join(self.conf.categories)if self.conf.categories else 'all'}"
             f"{s3_msg}"
         )
+        self.check_dom_integrity()
 
         self.metadata = self.get_online_metadata()
         logger.debug(
