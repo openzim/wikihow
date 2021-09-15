@@ -203,7 +203,7 @@ def parse_css(style: str) -> Tuple[str, List[Tuple[str, str]]]:
         end = line.index(")")
 
         # check whether it's quoted or not
-        if line[start] in ("'", '"'):
+        if line[start + 1] in ("'", '"'):
             start += 1
             end -= 1
 
