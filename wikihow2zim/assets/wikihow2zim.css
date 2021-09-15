@@ -149,8 +149,8 @@ html[dir=rtl] a.external-link {
 #relatedwikihows .content-fill {
     position: relative;
 }
-#relatedwikihows .wikihow2zim {
-    height: 188.583px;
+#relatedwikihows .content-spacer {
+    height: 189px;
 }
 .related-wh-title {
     left:  0;
