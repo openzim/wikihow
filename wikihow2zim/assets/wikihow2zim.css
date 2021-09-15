@@ -155,10 +155,27 @@ html[dir=rtl] a.external-link {
 .related-wh-title {
     left:  0;
 }
-/* Fixed sidebar related */
+
+/* sidebar */
+
+/* Fixed sidebar relateds */
 #side_related_articles .related-wh .content-spacer {
     height: 150.257px;
 }
+
+/* hiding all elements of sidebar except those we want to keep
+   because we know they look OK */
+#sidebar > * {
+    display: none;
+}
+#sidebar #social_proof_sidebox {
+    display: block;
+}
+#sidebar #side_related_articles{
+    display: block;
+}
+
+
 /* Fix missing title on category page */
 html[lang=en] .wikihow-category .cat_grid a .content-spacer {
     padding: 67px;
