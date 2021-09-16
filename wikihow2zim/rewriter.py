@@ -20,9 +20,27 @@ def is_in_code(elem):
     return False
 
 
+def is_child_of(elem, selector, soup):
+    """whether element is a child of element mathcing selector"""
+    target = soup.select(selector)
+    return target and target[0] in elem.parents
+
+
+def has_parent_tagged(elem, name):
+    """whether element has a parent which such tag name"""
+    for parent in elem.parents:
+        if parent.name == name:
+            return parent
+
+
 class Rewriter(GlobalMixin):
     def __init__(self):
         self.domain_re = re.compile(rf"https?://{self.conf.domain}(?P<path>/.+)")
+
+        # sets of articles and categories that should not be included
+        # filled by --exclude option
+        self.excluded_articles = set()
+        self.excluded_categories = set()
 
     def rewrite(self, content: str, to_root: str = "", unwrap: bool = False):
         if not content:
@@ -40,6 +58,7 @@ class Rewriter(GlobalMixin):
             getattr(soup, attr).unwrap()
 
         self.rewrite_links(soup, to_root)
+        self.rewrite_links_for_excludes(soup, to_root)
 
         self.rewrite_pictures(soup, to_root)
 
@@ -119,6 +138,81 @@ class Rewriter(GlobalMixin):
             failsafe=True,
         ).geturl()
 
+    def rewrite_links_for_excludes(self, soup, to_root):
+        if not self.conf.exclude:
+            return
+
+        article_re = re.compile(r"^" + to_root + r"(?P<path>.+)")
+        print(article_re)
+        category_re = re.compile(
+            r"^" + to_root + self.metadata["category_prefix"] + r":(?P<path>.+)"
+        )
+        print(f'a[href^="{to_root}"]')
+        for link in soup.select(f'a[href^="{to_root}"]'):
+
+            match = category_re.match(link.attrs["href"])
+            if match and match.groupdict().get("path") in self.excluded_categories:
+                self.rewrite_category_link_for_exclude(soup, link)
+                continue
+
+            match = article_re.match(link.attrs["href"])
+            # link to an excluded article
+            if match and match.groupdict().get("path") in self.excluded_articles:
+                self.rewrite_article_link_for_exclude(soup, link)
+                continue
+
+    def rewrite_article_link_for_exclude(self, soup, link):
+        # related links (both down article and sicebar)
+        if "related-wh" in link.attrs.get("class", []):
+            link.decompose()
+            return
+
+        if link.parent and "responsive_thumb" in link.parent.attrs.get("class", []):
+            link.parent.decompose()
+            return
+
+        # not an identified link, removing the target
+        del link.attrs["href"]
+
+    def rewrite_category_link_for_exclude(self, soup, link):
+        # in CategoryListing
+        if is_child_of(link, "#catlist", soup) and link.parent:
+            link.parent.decompose()
+            return
+
+        if link.parent and "cat_thumb" in link.parent.attrs.get("class", []):
+            link.parent.decompose()
+            return
+
+        # in Category (sub-category)
+        if "subcat_container" in link.attrs.get("class", []) and is_child_of(
+            link, "#subcats", soup
+        ):
+            if li := has_parent_tagged(link, "li"):
+                li.decompose()
+                return
+
+        # in Article
+        if is_child_of(link, "#breadcrumb", soup):
+            link.parent.decompose()
+            return
+
+        if is_child_of(link, ".sp_box.sp_fullbox", soup):
+            if link.parent and link.parent.name == "span":
+                if (
+                    isinstance(
+                        link.parent.previous_sibling,
+                        bs4.element.NavigableString,
+                    )
+                    and link.parent.previous_sibling.string == " | "
+                ):
+                    link.parent.previous_sibling.replace_with("")
+                link.parent.decompose()
+                return
+
+        # not an identified link, removing the target
+        del link.attrs["href"]
+
     def rewrite_images(self, soup, to_root):
         for img in soup.find_all("img"):
             if img.attrs.get("onload"):
@@ -158,5 +252,5 @@ class Rewriter(GlobalMixin):
                 continue
 
             for child in picture.contents:
-                if type(child) is bs4.element.Tag and child.name != "img":
+                if isinstance(child, bs4.element.Tag) and child.name != "img":
                     child.decompose()

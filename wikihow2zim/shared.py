@@ -24,7 +24,7 @@ class Global:
     )
     conf = None
 
-    metadata = None
+    metadata = {}
 
     creator = None
     imager = None
@@ -92,6 +92,10 @@ class GlobalMixin:
     @property
     def conf(self):
         return Global.conf
+
+    @property
+    def metadata(self):
+        return Global.metadata
 
     @property
     def creator(self):

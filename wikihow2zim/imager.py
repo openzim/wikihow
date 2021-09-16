@@ -72,7 +72,6 @@ class Imager:
         """request full processing of url, returning in-zim path immediately"""
 
         # find actual URL should it be from a provider
-        logger.debug(f"deferring {url=} {path=}")
         try:
             url = urllib.parse.urlparse(to_url(url))
         except Exception:

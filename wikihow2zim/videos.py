@@ -146,7 +146,6 @@ class VideoGrabber:
         """request full processing of url, returning in-zim path immediately"""
 
         # find actual URL should it be from a provider
-        logger.debug(f"deferring {url=} {path=}")
         try:
             url, is_youtube = self.get_url(url)
         except Exception:
