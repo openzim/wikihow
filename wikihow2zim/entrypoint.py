@@ -109,6 +109,13 @@ def main():
     )
 
     parser.add_argument(
+        "--exclude",
+        help="Path or URL to a text file listing Article ID or `Category:` prefixed "
+        "Category IDs to exclude from the scrape. Lines strating with # are ignored",
+        dest="exclude",
+    )
+
+    parser.add_argument(
         "--optimization-cache",
         help="URL with credentials to S3 for using as optimization cache",
         dest="s3_url_with_credentials",

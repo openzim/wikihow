@@ -329,6 +329,34 @@ class wikihow2zim(GlobalMixin):
             for link in soup.select("div.cat_list h3 a")
         ]
 
+    def build_exclude_lists(self):
+        """Using provided path/URL from --excldude, build list of exclusion
+
+        List is stored on rewriter as it is responsible for removing links to
+        those articles and categories.
+        File must contain Article ID (URL path) or Category: category ID"""
+        if not self.conf.exclude:
+            return
+
+        logger.info(f"Building exclusion list from {self.conf.exclude}")
+        excludes_fpath = self.build_dir / "excludes.lst"
+        handle_user_provided_file(source=self.conf.exclude, dest=excludes_fpath)
+
+        with open(excludes_fpath, "r") as fh:
+            for line in fh.readlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if line.startswith("Category:"):
+                    self.rewriter.excluded_categories.add(line.split("Category:", 1)[1])
+                else:
+                    self.rewriter.excluded_articles.add(line)
+
+        logger.info(
+            f"> {len(self.rewriter.excluded_articles)} articles and "
+            f"{len(self.rewriter.excluded_categories)} categories excluded."
+        )
+
     def add_homepage(self):
         logger.info("Building homepage")
 
@@ -401,7 +429,7 @@ class wikihow2zim(GlobalMixin):
             self.scrape_category(category, recurse)
 
     def scrape_category(self, category: str, recurse: bool = True):
-        if category in self.categories:
+        if category in self.categories or category in self.rewriter.excluded_categories:
             return
         self.categories.add(category)
 
@@ -474,7 +502,6 @@ class wikihow2zim(GlobalMixin):
         to_root = "./" + ("../" * path.count("/"))
 
         title = soup.find("title").string
-
         page = self.env.get_template("category.html").render(
             to_root=to_root,
             body_classes=" ".join(soup.find("body").attrs.get("class", [])),
@@ -485,7 +512,7 @@ class wikihow2zim(GlobalMixin):
                 + ["wikihow-category"]
             ),
             footer_links=self.metadata["footer_links"],
-            bread_crumbs=get_footer_crumbs_from(soup),
+            breadcrumbs=get_footer_crumbs_from(soup, self.rewriter.excluded_categories),
             title=title,
             **self.env_context,
         )
@@ -501,7 +528,7 @@ class wikihow2zim(GlobalMixin):
         return nb_pages, sub_categories
 
     def scrape_article(self, article, remove_all_links=False):
-        if article in self.articles:
+        if article in self.articles or article in self.rewriter.excluded_articles:
             return
         self.articles.add(article)
 
@@ -571,13 +598,12 @@ class wikihow2zim(GlobalMixin):
             body_classes=" ".join(soup.find("body").attrs.get("class", [])),
             content=self.rewriter.rewrite(content.decode_contents(), to_root=to_root),
             page_linked_styles=self.get_style_urls(soup),
-            # page_inline_styles=self.metadata["article_inline_digest"],
             viewport_classes=" ".join(
                 soup.find(attrs={"id": "mw-mf-viewport"}).attrs.get("class", [])
                 + ["wikihow-article"]
             ),
             footer_links=self.metadata["footer_links"],
-            bread_crumbs=get_footer_crumbs_from(soup),
+            breadcrumbs=get_footer_crumbs_from(soup, self.rewriter.excluded_categories),
             title=title,
             **self.env_context,
         )
@@ -793,7 +819,7 @@ class wikihow2zim(GlobalMixin):
         if not self.conf.skip_dom_check:
             self.check_dom_integrity()
 
-        self.metadata = self.get_online_metadata()
+        Global.metadata = self.get_online_metadata()
         logger.debug(
             f"homepage_name : {self.metadata['homepage_name']}\n"
             f"category_prefix : {self.metadata['category_prefix']}"
@@ -816,6 +842,8 @@ class wikihow2zim(GlobalMixin):
                     "homepage_name": self.metadata["homepage_name"],
                 }
             )
+
+            self.build_exclude_lists()
 
             if not self.conf.categories:
                 self.build_categories_list()

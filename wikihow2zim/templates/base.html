@@ -51,9 +51,9 @@
                     </a>
 
                     <div id="footer_crumbs">
-                        {% if bread_crumbs %}
+                        {% if breadcrumbs %}
                             <ul class="breadcrumbs">
-                                {% for crumb in bread_crumbs %}
+                                {% for crumb in breadcrumbs %}
                                     <li><a href="{{ to_root }}{{ crumb.0 }}" title="{{ crumb.2 }}">{{ crumb.1 }}</a></li>
                                 {% endfor %}
                             </ul>

@@ -7,7 +7,7 @@ import io
 import re
 import urllib.parse
 import zlib
-from typing import Iterable, List, Tuple, Union
+from typing import Iterable, List, Set, Tuple, Union
 
 import bs4
 import cssbeautifier
@@ -18,6 +18,8 @@ from tld import get_fld
 from zimscraperlib.download import stream_file
 
 from .shared import Global, logger
+
+nlink = collections.namedtuple("Link", ("path", "name", "title"))
 
 
 def get_url(path: str, **params) -> str:
@@ -60,13 +62,25 @@ def get_soup_of(text: str, unwrap: bool = False):
     return soup
 
 
-def get_footer_crumbs_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
+def get_footer_crumbs_from(
+    soup: bs4.element.Tag, excluded_categories: Set
+) -> List[Tuple[str, str, str]]:
     """List of (url, name and title) of footer breadcrumbs"""
-    return [
-        (link.attrs["href"][1:], link.string, link.attrs.get("title"))
-        for link in soup.select("#footer_crumbs ul li a")
-        if link.attrs.get("href")
-    ]
+
+    crumbs = []
+    for link in soup.select("#footer_crumbs ul li a[href]"):
+        if not link.attrs.get("href"):
+            continue
+        # might or might not be a Category link
+        try:
+            cat_ident = cat_ident_for(link.attrs["href"])
+        except Exception:
+            cat_ident = None
+        if cat_ident is None or cat_ident not in excluded_categories:
+            crumbs.append(
+                nlink(link.attrs["href"][1:], link.string, link.attrs.get("title"))
+            )
+    return crumbs
 
 
 def get_footer_links_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
@@ -74,7 +88,6 @@ def get_footer_links_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
     links = []
 
     fld = get_fld(Global.conf.main_url.geturl())
-    nlink = collections.namedtuple("Link", ("path", "name", "title"))
 
     # Skip some links with no offline value
     for link in soup.select("#footer_links ul li a"):

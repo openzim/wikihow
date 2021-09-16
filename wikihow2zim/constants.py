@@ -78,6 +78,7 @@ class Conf:
     # quality
     without_videos: Optional[bool] = False
     without_external_links: Optional[bool] = False
+    exclude: Optional[str] = ""
     low_quality: Optional[bool] = False
     video_format: Optional[str] = "webm"
 
