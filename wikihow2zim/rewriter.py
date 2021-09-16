@@ -148,11 +148,15 @@ class Rewriter(GlobalMixin):
                 img["src"] = f"{to_root}{path}"
 
     def rewrite_pictures(self, soup, to_root):
+        """remove all elements (source mostly) inside picture except img
+
+        pictures are used where there are webp version and the img is used as
+        fallback."""
         for picture in soup.find_all("picture"):
             # there's no fallback img, we can't remove sources
             if not picture.find("img"):
                 continue
 
             for child in picture.contents:
-                if child.name != "img":
+                if type(child) is bs4.element.Tag and child.name != "img":
                     child.decompose()
