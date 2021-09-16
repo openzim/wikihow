@@ -76,7 +76,7 @@ class Conf:
     s3_url_with_credentials: Optional[str] = ""
 
     # quality
-    without_images: Optional[bool] = False
+    without_videos: Optional[bool] = False
     without_external_links: Optional[bool] = False
     low_quality: Optional[bool] = False
     video_format: Optional[str] = "webm"
@@ -88,6 +88,10 @@ class Conf:
     debug: Optional[bool] = False
     delay: Optional[float] = 0
     stats_filename: Optional[str] = None
+    skip_dom_check: Optional[bool] = False
+    skip_footer_links: Optional[bool] = False
+    skip_relateds: Optional[bool] = False
+    single_article: Optional[str] = ""
 
     @staticmethod
     def get_url(lang_code):

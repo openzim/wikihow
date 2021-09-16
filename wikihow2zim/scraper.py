@@ -600,29 +600,37 @@ class wikihow2zim(GlobalMixin):
             )
 
     def handle_videos_for(self, soup: bs4.element.Tag):
-        for iframe in soup.select(".embedvideocontainer iframe.embedvideo"):
-            path = Global.vidgrabber.defer(url=iframe.get("data-src"))
-            if path is None:
-                iframe.decompose()
-                continue
+        # youtube video blocks
+        if self.conf.without_videos:
+            # remove video block
+            _ = [elem.decompose() for elem in soup.select(".section.video")]
+            # remove link to video block in TOC
+            _ = [elem.decompose() for elem in soup.select("#othervideo_toc")]
+            _ = [elem.decompose() for elem in soup.select('a[href="#Video"]')]
+        else:
+            for iframe in soup.select(".embedvideocontainer iframe.embedvideo"):
+                path = Global.vidgrabber.defer(url=iframe.get("data-src"))
+                if path is None:
+                    iframe.decompose()
+                    continue
 
-            poster = Global.imager.defer(
-                Global.vidgrabber.youtube_poster_url(iframe.get("data-src"))
-            )
-            iframe.replace_with(
-                get_soup_of(
-                    self.env.get_template("video.html").render(
-                        path=path,
-                        poster=poster,
-                        video_format=self.conf.video_format,
-                        width=iframe.attrs.get("width", "728"),
-                        height=iframe.attrs.get("height", "428"),
-                        autoplay="autoplay" in iframe.attrs.get("allow", ""),
-                        controls=True,
-                    ),
-                    unwrap=True,
+                poster = Global.imager.defer(
+                    Global.vidgrabber.youtube_poster_url(iframe.get("data-src"))
                 )
-            )
+                iframe.replace_with(
+                    get_soup_of(
+                        self.env.get_template("video.html").render(
+                            path=path,
+                            poster=poster,
+                            video_format=self.conf.video_format,
+                            width=iframe.attrs.get("width", "728"),
+                            height=iframe.attrs.get("height", "428"),
+                            autoplay="autoplay" in iframe.attrs.get("allow", ""),
+                            controls=True,
+                        ),
+                        unwrap=True,
+                    )
+                )
 
         # main-content (step) video hosted by wikiHow
         for video in soup.select(".video-player .video-container video"):
@@ -781,7 +789,9 @@ class wikihow2zim(GlobalMixin):
             f"{', '.join(self.conf.categories)if self.conf.categories else 'all'}"
             f"{s3_msg}"
         )
-        self.check_dom_integrity()
+
+        if not self.conf.skip_dom_check:
+            self.check_dom_integrity()
 
         self.metadata = self.get_online_metadata()
         logger.debug(
@@ -812,9 +822,17 @@ class wikihow2zim(GlobalMixin):
 
             # start adding ZIM pages
             self.add_homepage()
-            self.scrape_footer_articles()
-            self.scrape_categories()
-            self.scrape_related_articles()
+
+            if not self.conf.skip_footer_links:
+                self.scrape_footer_articles()
+
+            if self.conf.single_article:
+                self.scrape_article(self.conf.single_article)
+            else:
+                self.scrape_categories()
+
+            if not self.conf.skip_relateds:
+                self.scrape_related_articles()
 
             logger.info(
                 f"Stats: {len(self.categories)} categories, "

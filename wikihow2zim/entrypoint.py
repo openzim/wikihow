@@ -93,6 +93,14 @@ def main():
     )
 
     parser.add_argument(
+        "--without-videos",
+        help="Don't include the video blocks (Youtube hosted). Most are copyrighted",
+        action="store_true",
+        default=False,
+        dest="without_videos",
+    )
+
+    parser.add_argument(
         "--without-external-links",
         help="Don't include external links",
         action="store_true",
@@ -140,6 +148,36 @@ def main():
         help="Add this delay (seconds) before each request to please "
         "wikiHow servers. Can be fractions. Defaults to 0: no delay",
         type=float,
+    )
+
+    parser.add_argument(
+        "--skip-dom-check",
+        help="[dev] Don't perform DOM Integrity Checks on start",
+        default=False,
+        action="store_true",
+        dest="skip_dom_check",
+    )
+
+    parser.add_argument(
+        "--skip-footer-links",
+        help="[dev] Don't scrape footer links",
+        default=False,
+        action="store_true",
+        dest="skip_footer_links",
+    )
+
+    parser.add_argument(
+        "--skip-relateds",
+        help="[dev] Don't fetch related articles from found articles",
+        default=False,
+        action="store_true",
+        dest="skip_relateds",
+    )
+
+    parser.add_argument(
+        "--single-article",
+        help="[dev] Don't scrape categories, just that single article instead",
+        dest="single_article",
     )
 
     parser.add_argument(
