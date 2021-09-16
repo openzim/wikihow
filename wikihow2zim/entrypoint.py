@@ -111,7 +111,7 @@ def main():
     parser.add_argument(
         "--exclude",
         help="Path or URL to a text file listing Article ID or `Category:` prefixed "
-        "Category IDs to exclude from the scrape. Lines strating with # are ignored",
+        "Category IDs to exclude from the scrape. Lines starting with # are ignored",
         dest="exclude",
     )
 
