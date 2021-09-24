@@ -1,13 +1,35 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import collections
 import re
 import urllib.parse
 
 import bs4
 
 from .shared import GlobalMixin, logger
-from .utils import rebuild_uri
+from .utils import normalize_ident, rebuild_uri
+
+seldef = collections.namedtuple(
+    "SelectorDef",
+    [
+        "selector",
+        "for_category",
+        "target_is_parent",
+        "clear_parent_previous_sibling",
+    ],
+)
+
+
+def remove_link_for_exclusion(link, selector_def):
+    """remove a link or its parent based on selector_def"""
+    if selector_def.clear_parent_previous_sibling:
+        link.parent.previous_sibling.replace_with("")
+
+    if selector_def.target_is_parent:
+        link.parent.decompose()
+    else:
+        link.decompose()
 
 
 def is_in_code(elem):
@@ -143,75 +165,44 @@ class Rewriter(GlobalMixin):
             return
 
         article_re = re.compile(r"^" + to_root + r"(?P<path>.+)")
-        print(article_re)
         category_re = re.compile(
             r"^" + to_root + self.metadata["category_prefix"] + r":(?P<path>.+)"
         )
-        print(f'a[href^="{to_root}"]')
-        for link in soup.select(f'a[href^="{to_root}"]'):
 
-            match = category_re.match(link.attrs["href"])
-            if match and match.groupdict().get("path") in self.excluded_categories:
-                self.rewrite_category_link_for_exclude(soup, link)
-                continue
+        selectors = [
+            # related articles in article page
+            seldef("#relatedwikihows > a.related-wh[href]", False, False, False),
+            # link to article in category page
+            seldef("#cat_all div.responsive_thumb > a[href]", False, True, False),
+            # sub category link in category page
+            seldef("#subcats > ul a[href]", True, True, False),
+            # categorlyListing thumbnail link (english)
+            seldef(".cat_container a[href]", True, True, False),
+            # categorylisting link to category
+            seldef("#catlist_container #catlist a[href]", True, True, False),
+            # top breadcrumb in article page
+            seldef(".breadcrumbs a[href]", True, True, False),
+            # list of categories article is in  - in About section of article page
+            seldef(".sp_box.sp_fullbox a[href]", True, True, True),
+        ]
 
-            match = article_re.match(link.attrs["href"])
-            # link to an excluded article
-            if match and match.groupdict().get("path") in self.excluded_articles:
-                self.rewrite_article_link_for_exclude(soup, link)
-                continue
-
-    def rewrite_article_link_for_exclude(self, soup, link):
-        # related links (both down article and sicebar)
-        if "related-wh" in link.attrs.get("class", []):
-            link.decompose()
-            return
-
-        if link.parent and "responsive_thumb" in link.parent.attrs.get("class", []):
-            link.parent.decompose()
-            return
-
-        # not an identified link, removing the target
-        del link.attrs["href"]
-
-    def rewrite_category_link_for_exclude(self, soup, link):
-        # in CategoryListing
-        if is_child_of(link, "#catlist", soup) and link.parent:
-            link.parent.decompose()
-            return
-
-        if link.parent and "cat_thumb" in link.parent.attrs.get("class", []):
-            link.parent.decompose()
-            return
-
-        # in Category (sub-category)
-        if "subcat_container" in link.attrs.get("class", []) and is_child_of(
-            link, "#subcats", soup
-        ):
-            if li := has_parent_tagged(link, "li"):
-                li.decompose()
-                return
-
-        # in Article
-        if is_child_of(link, "#breadcrumb", soup):
-            link.parent.decompose()
-            return
-
-        if is_child_of(link, ".sp_box.sp_fullbox", soup):
-            if link.parent and link.parent.name == "span":
-                if (
-                    isinstance(
-                        link.parent.previous_sibling,
-                        bs4.element.NavigableString,
-                    )
-                    and link.parent.previous_sibling.string == " | "
-                ):
-                    link.parent.previous_sibling.replace_with("")
-                link.parent.decompose()
-                return
-
-        # not an identified link, removing the target
-        del link.attrs["href"]
+        for sdef in selectors:
+            for link in soup.select(sdef.selector):
+                href = normalize_ident(link.attrs["href"])
+                if sdef.for_category:
+                    match = category_re.match(href)
+                    if (
+                        match
+                        and match.groupdict().get("path") in self.excluded_categories
+                    ):
+                        remove_link_for_exclusion(link, sdef)
+                else:
+                    match = article_re.match(href)
+                    if (
+                        match
+                        and match.groupdict().get("path") in self.excluded_articles
+                    ):
+                        remove_link_for_exclusion(link, sdef)
 
     def rewrite_images(self, soup, to_root):
         for img in soup.find_all("img"):
