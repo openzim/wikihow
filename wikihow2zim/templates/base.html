@@ -79,5 +79,13 @@
             </div>
         </div>
     </div>
+    <script type="text/javascript">
+        var vjs_options = {"techOrder": ["html5", "ogvjs"], "ogvjs": {"base": "assets/vendor/ogvjs"}, "controlBar": {"pictureInPictureToggle":false}};
+        // mobile safari won't autoplay muted loop webm
+        if (/(mobile|iphone|ipad).*safari*/i.test(navigator.userAgent)) { vjs_options.controls = true;}
+        document.querySelectorAll('.video-js').forEach(function(video) {
+            videojs(video, vjs_options);
+        });
+    </script>
 </body>
 </html>

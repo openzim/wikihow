@@ -36,9 +36,5 @@ mv ogvjs-1.8.4 $ASSETS_PATH/ogvjs
 rm -f ogvjs-1.8.4.zip
 
 echo "getting videojs-ogvjs.js"
-curl -L -O https://github.com/hartman/videojs-ogvjs/archive/v1.3.1.zip
-rm -f $ASSETS_PATH/videojs-ogvjs.js
-unzip -o v1.3.1.zip
-mv videojs-ogvjs-1.3.1/dist/videojs-ogvjs.js $ASSETS_PATH/videojs-ogvjs.js
-rm -rf videojs-ogvjs-1.3.1
-rm -f v1.3.1.zip
+# https://github.com/hartman/videojs-ogvjs/archive/v1.3.1.zip fixed to trigger on video/webm
+curl -L -o $ASSETS_PATH/videojs-ogvjs.js https://gist.githubusercontent.com/rgaudin/94d8f916d6d9c83f9b9ca86f6d89dc18/raw/1caa936aa6f9c74793dae40de557d721a5a6ff03/videojs-ogvjs.js
