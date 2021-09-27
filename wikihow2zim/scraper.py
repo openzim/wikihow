@@ -767,11 +767,14 @@ class wikihow2zim(GlobalMixin):
         if not re.findall(":", category_link):
             raise DomIntegrityError("has not category link")
 
-        resp = requests.get(to_url(f"/Category:{category_id}"))
+        category_req_url = normalize_ident(to_url(f"/Category:{category_id}"))
+        resp = requests.get(category_req_url)
         if resp.status_code != 200:
             raise DomIntegrityError(f"Category link if not valid ({resp})")
 
-        if resp.url != to_url(category_link):
+        # should redirect to locale category prefix
+        # but can respond directly on English prefix (`de`)
+        if resp.url not in (normalize_ident(to_url(category_link)), category_req_url):
             raise DomIntegrityError("Category link is not an actual Category")
 
         logger.debug("> checking Category Page")
