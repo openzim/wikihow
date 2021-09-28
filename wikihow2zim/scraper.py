@@ -757,7 +757,7 @@ class wikihow2zim(GlobalMixin):
         # these links should all be Category links
         # we'll reuse selected link to check Category page later
         category_link = category_links[
-            random.randint(0, len(category_links))
+            random.randint(0, len(category_links) - 1)
         ].attrs.get("href")
         if not category_link:
             raise DomIntegrityError("Category link has no href")
