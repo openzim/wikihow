@@ -133,7 +133,7 @@ def get_digest(url: str) -> str:
 
 def cat_ident_for(href: str) -> str:
     """decoded name of a category from a link target"""
-    return normalize_ident(href.split(":", 1)[1])
+    return normalize_ident(href).split(":", 1)[1]
 
 
 def fix_pagination_links(soup: bs4.element.Tag):
