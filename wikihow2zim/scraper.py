@@ -822,8 +822,15 @@ class wikihow2zim(GlobalMixin):
 
         Global.metadata = self.get_online_metadata()
         logger.debug(
-            f"homepage_name : {self.metadata['homepage_name']}\n"
-            f"category_prefix : {self.metadata['category_prefix']}"
+            f"homepage_name: {self.metadata['homepage_name']}\n"
+            f"category_prefix: {self.metadata['category_prefix']}\n"
+            f"url_special_category: {self.metadata['url_special_category']}\n"
+            f"dir: {self.metadata['dir']}\n"
+            f"title: {self.metadata['title']}\n"
+            f"description: {self.metadata['description']}\n"
+            f"icon: {self.metadata['icon']}\n"
+            f"favicon: {self.metadata['favicon']}\n"
+            f"logo: {self.metadata['logo']}"
         )
         self.sanitize_inputs()
 
