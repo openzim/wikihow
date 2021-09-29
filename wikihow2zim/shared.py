@@ -55,9 +55,15 @@ class Global:
             prefix="IMG-T-",
         )
 
+        # without_videos means without Youtube videos but there are still plenty
+        # of regular videos for animations.
+        # We use a single video worker for videos if Youtube is enabled to prevent
+        # blacklisting of the host IP by Youtube
+        # this should be smarter in processing non-youtube videos in parallel and
+        # limit youtube ones to a single worker in every cases
         Global.video_executor = Executor(
             queue_size=20,
-            nb_workers=1,
+            nb_workers=10 if Global.conf.without_videos else 1,
             prefix="VID-T-",
         )
 
