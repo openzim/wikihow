@@ -99,7 +99,7 @@ class wikihow2zim(GlobalMixin):
         """metadata from online website, looking at homepage source code"""
         logger.debug("Fecthing website metdata")
 
-        soup = get_soup("/")
+        soup, _ = get_soup("/")
 
         # external (<link />) and inline (<style/>) CSS resources
         linked_styles = []
@@ -113,13 +113,11 @@ class wikihow2zim(GlobalMixin):
         return {
             "dir": soup.find("html").attrs["dir"],
             "category_prefix": normalize_ident(
-                soup.select("#hp_categories_list a")[0]
-                .attrs.get("href")
-                .split(":", 1)[0][1:]
-            ),
+                soup.select("#hp_categories_list a")[0].attrs.get("href")
+            ).split(":", 1)[0][1:],
             "homepage_name": normalize_ident(
-                soup.select("a#header_logo")[0].attrs.get("href").replace("/", "")
-            ),
+                soup.select("a#header_logo")[0].attrs.get("href")
+            ).replace("/", ""),
             "title": soup.find("title").string,
             "description": soup.find("meta", attrs={"name": "description"}).attrs.get(
                 "content"
@@ -302,7 +300,7 @@ class wikihow2zim(GlobalMixin):
             self.add_css(url)
 
         # Articles have a custom inline CSS
-        soup = get_soup("/wikihow:About-wikiHow")
+        soup, _ = get_soup("/wikihow:About-wikiHow")
         self.metadata["article_inline_digest"] = self.add_css(
             "\n".join([style.string for style in soup.find_all("style", src=False)]),
             inline=True,
@@ -323,10 +321,9 @@ class wikihow2zim(GlobalMixin):
         """Parses Sitemap online to get a list of root-level categories"""
         logger.info("Building list of root categories")
 
-        soup = get_soup("/Special:Sitemap")
+        soup, _ = get_soup("/Special:CategoryListing")
         self.conf.categories = [
-            cat_ident_for(link.attrs["href"])
-            for link in soup.select("div.cat_list h3 a")
+            cat_ident_for(link.attrs["href"]) for link in soup.select("#catlist a")
         ]
 
     def build_exclude_lists(self):
@@ -360,7 +357,7 @@ class wikihow2zim(GlobalMixin):
     def add_homepage(self):
         logger.info("Building homepage")
 
-        soup = get_soup("/Special:CategoryListing")
+        soup, _ = get_soup("/Special:CategoryListing")
 
         # CategoryListing has custom CSS
         linked_styles = [
@@ -425,7 +422,6 @@ class wikihow2zim(GlobalMixin):
             if category.endswith("/"):
                 category = category[:-1]
                 recurse = False
-
             self.scrape_category(category, recurse)
 
     def scrape_category(self, category: str, recurse: bool = True):
@@ -455,11 +451,11 @@ class wikihow2zim(GlobalMixin):
             params = {"pg": page_num}
 
         try:
-            soup = get_soup(category_url, **params)
+            soup, paths = get_soup(category_url, **params)
         except requests.exceptions.HTTPError as exc:
             # don't fail on missing Category (#46)
             if exc.response.status_code == 404:
-                logger.debug(">>> HTTP 404, skipping.")
+                logger.warning(">>> HTTP 404, skipping.")
                 self.missing_categories.add(category_url)
                 return 0, []
             raise exc
@@ -495,7 +491,8 @@ class wikihow2zim(GlobalMixin):
         for selector in black_list:
             _ = [elem.decompose() for elem in content.select(selector)]
 
-        path = f"{self.metadata['category_prefix']}:{category}"
+        # zim article path
+        path = paths.pop()
         if page_num > 1:
             path += f"_pg={page_num}"
         # some categories include a `/`. ex: Système-Macintosh/Apple
@@ -525,6 +522,13 @@ class wikihow2zim(GlobalMixin):
                 is_front=True,
             )
 
+        for redir_path in paths:
+            with self.lock:
+                self.creator.add_redirect(
+                    path=redir_path + (f"_pg={page_num}" if page_num > 1 else ""),
+                    target_path=path,
+                )
+
         return nb_pages, sub_categories
 
     def scrape_article(self, article, remove_all_links=False):
@@ -535,7 +539,7 @@ class wikihow2zim(GlobalMixin):
         logger.info(f">> Article:{article}")
 
         try:
-            soup = get_soup(f"/{article}")
+            soup, _ = get_soup(f"/{article}")
         except requests.exceptions.HTTPError as exc:
             if exc.response.status_code == 404:
                 logger.warning(">>> HTTP 404, skipping.")
@@ -745,7 +749,7 @@ class wikihow2zim(GlobalMixin):
 
         logger.debug("> checking CategoryListing")
 
-        soup = get_soup("/Special:CategoryListing")
+        soup, _ = get_soup("/Special:CategoryListing")
         if not soup.select("#content_wrapper"):
             raise DomIntegrityError("#content_wrapper not found")
         category_links = soup.select("#catlist_container #catlist a")
@@ -772,22 +776,17 @@ class wikihow2zim(GlobalMixin):
         if resp.status_code != 200:
             raise DomIntegrityError(f"Category link if not valid ({resp})")
 
-        # should redirect to locale category prefix
-        # but can respond directly on English prefix (`de`)
-        if resp.url not in (normalize_ident(to_url(category_link)), category_req_url):
-            raise DomIntegrityError("Category link is not an actual Category")
-
         logger.debug("> checking Category Page")
 
         # Category page is mostly a grid listing articles in the Category
-        soup = get_soup(f"/Category:{category_id}")
+        soup, _ = get_soup(f"/Category:{category_id}")
         if not soup.select("#cat_all > div.cat_grid"):
             raise DomIntegrityError("Article list not found in #cat_grid")
 
         logger.debug("> checking Article Page")
 
         # Using Randomizer to select a random article from source website
-        soup = get_soup("/Special:Randomizer")
+        soup, _ = get_soup("/Special:Randomizer")
 
         # Checking that we have a title where expected
         if not soup.select("#content_inner > div.pre-content h1"):
@@ -824,8 +823,15 @@ class wikihow2zim(GlobalMixin):
 
         Global.metadata = self.get_online_metadata()
         logger.debug(
-            f"homepage_name : {self.metadata['homepage_name']}\n"
-            f"category_prefix : {self.metadata['category_prefix']}"
+            f"homepage_name: {self.metadata['homepage_name']}\n"
+            f"category_prefix: {self.metadata['category_prefix']}\n"
+            f"url_special_category: {self.metadata['url_special_category']}\n"
+            f"dir: {self.metadata['dir']}\n"
+            f"title: {self.metadata['title']}\n"
+            f"description: {self.metadata['description']}\n"
+            f"icon: {self.metadata['icon']}\n"
+            f"favicon: {self.metadata['favicon']}\n"
+            f"logo: {self.metadata['logo']}"
         )
         self.sanitize_inputs()
 
