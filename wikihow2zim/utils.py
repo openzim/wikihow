@@ -15,7 +15,7 @@ import requests
 from kiwixstorage import KiwixStorage
 from pif import get_public_ip
 from tld import get_fld
-from zimscraperlib.download import stream_file
+from zimscraperlib.download import _get_retry_adapter, stream_file
 
 from .shared import Global, logger
 
@@ -46,11 +46,35 @@ def to_rel(url: str) -> Union[None, str]:
     return uri.path
 
 
+def no_leading_slash(text: str):
+    """text with leading slash removed if present"""
+    return re.sub(r"^/", "", text)
+
+
+def only_path_of(url: str):
+    """normalized path part of an url"""
+    return normalize_ident(urllib.parse.urlparse(url).path)
+
+
 def fetch(path: str, **params) -> str:
-    """source text of a path from source website"""
-    stream = io.BytesIO()
-    stream_file(url=get_url(path, **params), byte_stream=stream)
-    return stream.getvalue().decode("UTF-8")
+    """(source text, actual_paths) of a path from source website
+
+    actual_paths is amn ordered list of paths that were traversed to get to content.
+    Without redirection, it should be a single path, equal to request
+    Final, target path is always last"""
+    session = requests.Session()
+    session.mount("http", _get_retry_adapter(5))  # tied to http and https
+    resp = session.get(get_url(path, **params), params=params)
+    resp.raise_for_status()
+
+    # we have params meaning we requested a page (?pg=xxx)
+    # assumption: this must be a category page (so on same domain)
+    # we thus need to use redirection target (which lost param) with params
+    if params and resp.history:
+        return fetch(only_path_of(resp.url), **params)
+    return resp.text, [
+        no_leading_slash(only_path_of(r.url)) for r in resp.history + [resp]
+    ]
 
 
 def get_soup_of(text: str, unwrap: bool = False):
@@ -114,7 +138,8 @@ def get_footer_links_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
 
 def get_soup(path: str, **params) -> bs4.BeautifulSoup:
     """an lxml soup of a path on source website"""
-    return get_soup_of(fetch(path, **params))
+    content, paths = fetch(path, **params)
+    return get_soup_of(content), paths
 
 
 def soup_link_finder(elem: bs4.element.Tag) -> bool:
