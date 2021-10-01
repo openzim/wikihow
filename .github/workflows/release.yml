@@ -49,6 +49,5 @@ jobs:
           twine check dist/*
           if [  "${{ matrix.os }}" == "ubuntu-latest" -a "${{ matrix.python-version }}" = "3.6" ]
           then
-            twine upload dist/*.tar.gz
+            twine upload dist/*
           fi
-          twine upload dist/*.whl
