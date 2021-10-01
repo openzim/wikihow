@@ -727,6 +727,9 @@ class wikihow2zim(GlobalMixin):
             if not url:
                 url = to_url(f"/video{video.attrs.get('data-src')}")
 
+            poster_path = Global.imager.defer(
+                url=to_url(video.attrs.get("poster", video.attrs.get("data-poster")))
+            )
             path = Global.vidgrabber.defer(url=to_url(url))
             if path is None:
                 video.decompose()
@@ -736,6 +739,7 @@ class wikihow2zim(GlobalMixin):
                 get_soup_of(
                     self.env.get_template("video.html").render(
                         path=path,
+                        poster=poster_path,
                         classes=" ".join(video.attrs.get("class")),
                         video_format=self.conf.video_format,
                         autoplay=True,
