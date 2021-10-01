@@ -12,41 +12,24 @@ env:
 jobs:
   release:
     environment: release
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: [3.8]
-
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.8
         uses: actions/setup-python@v1
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.8
           architecture: x64
 
       - name: Build sdist and wheel
         run: |
           pip install --upgrade setuptools pip wheel
-          if [[  "${{ matrix.python-version }}" == "3.6" ]]
-          then
-            python3 setup.py sdist
-          fi
+          python3 setup.py sdist
           python3 setup.py bdist_wheel
-
-      - uses: actions/upload-artifact@v1
-        with:
-          name: wheels
-          path: ./dist
 
       - name: Push release to PyPI
         if: github.event_name == 'release'
         run: |
           pip install --upgrade twine
           twine check dist/*
-          if [  "${{ matrix.os }}" == "ubuntu-latest" -a "${{ matrix.python-version }}" = "3.8" ]
-          then
-            twine upload dist/*
-          fi
+          twine upload dist/*
