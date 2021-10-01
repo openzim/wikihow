@@ -632,11 +632,13 @@ class wikihow2zim(GlobalMixin):
     def handle_videos_for(self, soup: bs4.element.Tag):
         # youtube video blocks
         if self.conf.without_videos:
-            # remove video block
-            _ = [elem.decompose() for elem in soup.select(".section.video")]
             # remove link to video block in TOC
+            # note that #summaryvideo_toc is different and is not Youtube
             _ = [elem.decompose() for elem in soup.select("#othervideo_toc")]
-            _ = [elem.decompose() for elem in soup.select('a[href="#Video"]')]
+            # English has a .section.video selector for the video block we target
+            # but the class name is localized so it differs from languages.
+            # we thus remove the #video parent instead
+            _ = [elem.parent.decompose() for elem in soup.select("#video")]
         else:
             for iframe in soup.select(".embedvideocontainer iframe.embedvideo"):
                 path = Global.vidgrabber.defer(url=iframe.get("data-src"))
