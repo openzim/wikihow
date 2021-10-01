@@ -654,11 +654,13 @@ class wikihow2zim(GlobalMixin):
                         self.env.get_template("video.html").render(
                             path=path,
                             poster=poster,
+                            classes=["youtube"],
                             video_format=self.conf.video_format,
                             width=iframe.attrs.get("width", "728"),
                             height=iframe.attrs.get("height", "428"),
                             autoplay="autoplay" in iframe.attrs.get("allow", ""),
                             controls=True,
+                            preload=False,
                         ),
                         unwrap=True,
                     )
@@ -709,6 +711,7 @@ class wikihow2zim(GlobalMixin):
                         loop="loop" in video.attrs,
                         playsinline="playsinline" in video.attrs,
                         controls=show_controls,
+                        preload=True,
                     )
                 )
             )
@@ -750,6 +753,7 @@ class wikihow2zim(GlobalMixin):
                         loop="loop" in video.attrs,
                         playsinline="playsinline" in video.attrs,
                         controls=False,
+                        preload=True,
                     )
                 )
             )
