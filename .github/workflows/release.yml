@@ -8,7 +8,6 @@ on:
 env:
   TWINE_USERNAME: __token__
   TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-  TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
 
 jobs:
   release:
@@ -17,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.8]
 
     steps:
       - uses: actions/checkout@v2
@@ -47,7 +46,7 @@ jobs:
         run: |
           pip install --upgrade twine
           twine check dist/*
-          if [  "${{ matrix.os }}" == "ubuntu-latest" -a "${{ matrix.python-version }}" = "3.6" ]
+          if [  "${{ matrix.os }}" == "ubuntu-latest" -a "${{ matrix.python-version }}" = "3.8" ]
           then
             twine upload dist/*
           fi
