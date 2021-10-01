@@ -664,6 +664,13 @@ class wikihow2zim(GlobalMixin):
                     )
                 )
 
+        # record the video summary section if present.
+        # allows distinguishing between step videos and summary one
+        try:
+            video_summary = soup.select(".summary_with_video")[0]
+        except IndexError:
+            video_summary = None
+
         # main-content (step) video hosted by wikiHow
         for video in soup.select(".video-player .video-container video"):
             # skip our own videos
@@ -688,6 +695,8 @@ class wikihow2zim(GlobalMixin):
             # remove extra “controls” and watermark (from .video-player) :requires JS
             for elem in video.parent.parent.select(".m-video-controls, .m-video-wm"):
                 elem.decompose()
+
+            show_controls = video_summary and video in video_summary.select("video")
             video.replace_with(
                 get_soup_of(
                     self.env.get_template("video.html").render(
@@ -699,7 +708,7 @@ class wikihow2zim(GlobalMixin):
                         muted="muted" in video.attrs,
                         loop="loop" in video.attrs,
                         playsinline="playsinline" in video.attrs,
-                        controls=False,
+                        controls=show_controls,
                     )
                 )
             )
