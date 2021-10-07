@@ -188,7 +188,11 @@ class Rewriter(GlobalMixin):
 
         for sdef in selectors:
             for link in soup.select(sdef.selector):
-                href = normalize_ident(link.attrs["href"])
+                try:
+                    href = normalize_ident(link.attrs["href"])
+                except TypeError:
+                    logger.debug(f"Invalid link during rewrite: {link}")
+                    continue
                 if sdef.for_category:
                     match = category_re.match(href)
                     if (
