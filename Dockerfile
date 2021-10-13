@@ -18,13 +18,6 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-# TEMP
-RUN wget --progress=dot:giga -L \
-    http://tmp.kiwix.org/wheels/libzim-1.0.0.dev4-cp38-cp38-manylinux1_x86_64.whl \
-    http://tmp.kiwix.org/wheels/zimscraperlib-1.4.0.dev4-py3-none-any.whl \
-    && pip3 install --no-cache-dir ./*.whl \
-    && rm ./*.whl
-
 COPY requirements.txt /src/
 RUN pip3 install --no-cache-dir -r /src/requirements.txt
 COPY wikihow2zim /src/wikihow2zim
