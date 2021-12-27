@@ -27,6 +27,7 @@ from .utils import (
     get_soup,
     get_soup_of,
     get_subcategories_from,
+    get_url_raw,
     normalize_ident,
     parse_css,
     setup_s3_and_check_credentials,
@@ -75,6 +76,10 @@ class wikihow2zim(GlobalMixin):
         # we'll go over this at end of categories scrape.
         # those left are not listed in any category
         self.related_articles = set()
+
+    @property
+    def single_category(self):
+        return self.conf.categories[0] if len(self.conf.categories) == 1 else None
 
     @property
     def build_dir(self):
@@ -326,6 +331,22 @@ class wikihow2zim(GlobalMixin):
             cat_ident_for(link.attrs["href"]) for link in soup.select("#catlist a")
         ]
 
+    def get_categories_for(self, title: str):
+        def to_mw_path(title):
+            """API returned title to mediawiki URL"""
+            return title.replace(" ", "-")
+
+        data = requests.get(
+            get_url_raw(
+                f"/api.php?action=query&format=json&x&prop=categories&titles={title}"
+            )
+        ).json()
+        pages = data["query"]["pages"]
+        page_id = list(pages.keys())[0]
+        categories = pages[page_id]["categories"]
+        prefix_len = len(self.metadata["category_prefix"]) + 1
+        return [to_mw_path(cat["title"][prefix_len:]) for cat in categories]
+
     def build_exclude_lists(self):
         """Using provided path/URL from --excldude, build list of exclusion
 
@@ -355,6 +376,25 @@ class wikihow2zim(GlobalMixin):
         )
 
     def add_homepage(self):
+        if self.single_category:
+            logger.info(f"Using {self.single_category} as homepage")
+
+            with self.lock:
+                self.creator.add_redirect(
+                    path=self.metadata["homepage_name"],
+                    target_path=f'{self.metadata["category_prefix"]}:'
+                    f"{self.single_category}",
+                )
+                self.creator.add_redirect(
+                    path=DEFAULT_HOMEPAGE,
+                    target_path=f'{self.metadata["category_prefix"]}:'
+                    f"{self.single_category}",
+                )
+                self.creator.add_redirect(
+                    path=self.metadata["url_special_category"],
+                    target_path=DEFAULT_HOMEPAGE,
+                )
+            return
         logger.info("Building homepage")
 
         soup, _ = get_soup("/Special:CategoryListing")
@@ -877,6 +917,15 @@ class wikihow2zim(GlobalMixin):
 
             if not self.conf.categories:
                 self.build_categories_list()
+
+            # exclude categories of the requested category in case of single cat req.
+            # prevents breadcrumbs from including parent categories links
+            if self.single_category:
+                for category in self.get_categories_for(
+                    f"{self.metadata['category_prefix']}:{self.single_category}"
+                ):
+                    logger.debug(f"Excluding category: {category}")
+                    self.rewriter.excluded_categories.add(category)
 
             # start adding ZIM pages
             self.add_homepage()

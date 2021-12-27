@@ -161,7 +161,7 @@ class Rewriter(GlobalMixin):
         ).geturl()
 
     def rewrite_links_for_excludes(self, soup, to_root):
-        if not self.conf.exclude:
+        if not self.excluded_articles and not self.excluded_categories:
             return
 
         article_re = re.compile(r"^" + to_root + r"(?P<path>.+)")
