@@ -1,3 +1,7 @@
+# 1.0.2
+
+- Allow creation of usable ZIM from single category using --category
+
 # 1.0.1
 
 - Using pylibzim 1.0.0 and zimscraperlib 1.4.0
