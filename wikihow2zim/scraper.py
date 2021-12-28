@@ -343,7 +343,11 @@ class wikihow2zim(GlobalMixin):
         ).json()
         pages = data["query"]["pages"]
         page_id = list(pages.keys())[0]
-        categories = pages[page_id]["categories"]
+        try:
+            categories = pages[page_id]["categories"]
+        # has no category (ie. not a sub category)
+        except KeyError:
+            return []
         prefix_len = len(self.metadata["category_prefix"]) + 1
         return [to_mw_path(cat["title"][prefix_len:]) for cat in categories]
 
