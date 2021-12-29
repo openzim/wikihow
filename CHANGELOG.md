@@ -1,3 +1,8 @@
+# 1.0.3
+
+- Fixed parent-categories retrieval for root categories
+- Fixed category page icon size (#106)
+
 # 1.0.2
 
 - Allow creation of usable ZIM from single category using --category

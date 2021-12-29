@@ -174,9 +174,3 @@ html[dir=rtl] a.external-link {
 #sidebar #side_related_articles{
     display: block;
 }
-
-
-/* Fix missing title on category page */
-html[lang=en] .wikihow-category .cat_grid a .content-spacer {
-    padding: 67px;
-}
