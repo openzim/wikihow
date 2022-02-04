@@ -61,8 +61,9 @@ class Rewriter(GlobalMixin):
 
         # sets of articles and categories that should not be included
         # filled by --exclude option
-        self.excluded_articles = set()
-        self.excluded_categories = set()
+        self.exclusion_articles = set()
+        self.exclusion_categories = set()
+        self.inclusion_articles = set()
 
     def rewrite(self, content: str, to_root: str = "", unwrap: bool = False):
         if not content:
@@ -81,6 +82,7 @@ class Rewriter(GlobalMixin):
 
         self.rewrite_links(soup, to_root)
         self.rewrite_links_for_excludes(soup, to_root)
+        self.remove_empty_sections(soup, to_root)
 
         self.rewrite_pictures(soup, to_root)
 
@@ -161,7 +163,11 @@ class Rewriter(GlobalMixin):
         ).geturl()
 
     def rewrite_links_for_excludes(self, soup, to_root):
-        if not self.excluded_articles and not self.excluded_categories:
+        if (
+            not self.exclusion_articles
+            and not self.exclusion_categories
+            and not self.inclusion_articles
+        ):
             return
 
         article_re = re.compile(r"^" + to_root + r"(?P<path>.+)")
@@ -172,6 +178,8 @@ class Rewriter(GlobalMixin):
         selectors = [
             # related articles in article page
             seldef("#relatedwikihows > a.related-wh[href]", False, False, False),
+            # related articles in sidebar
+            seldef(".related_articles > a.related-wh[href]", False, False, False),
             # link to article in category page
             seldef("#cat_all div.responsive_thumb > a[href]", False, True, False),
             # sub category link in category page
@@ -197,16 +205,32 @@ class Rewriter(GlobalMixin):
                     match = category_re.match(href)
                     if (
                         match
-                        and match.groupdict().get("path") in self.excluded_categories
+                        and match.groupdict().get("path") in self.exclusion_categories
                     ):
                         remove_link_for_exclusion(link, sdef)
                 else:
                     match = article_re.match(href)
-                    if (
-                        match
-                        and match.groupdict().get("path") in self.excluded_articles
+                    match_path = match.groupdict().get("path")
+                    if match and (
+                        match_path in self.exclusion_articles
+                        or (
+                            self.inclusion_articles
+                            and match_path not in self.inclusion_articles
+                        )
                     ):
                         remove_link_for_exclusion(link, sdef)
+
+    def remove_empty_sections(self, soup, to_root):
+        """remove sections left empty by links removal; if any"""
+        removed_relateds = False
+        for section_sel in (".section.relatedwikihows", ".sidebox.related_articles"):
+            for section in soup.select(section_sel):
+                if not len(section.select("a")):
+                    removed_relateds = True
+                    section.decompose()
+
+        if removed_relateds:
+            [item.decompose() for item in soup.select("#rwh_toc")]
 
     def rewrite_images(self, soup, to_root):
         for img in soup.find_all("img"):
