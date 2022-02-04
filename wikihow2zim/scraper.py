@@ -332,56 +332,95 @@ class wikihow2zim(GlobalMixin):
         ]
 
     def get_categories_for(self, title: str):
+        """All categories returned by API for a title"""
+
         def to_mw_path(title):
             """API returned title to mediawiki URL"""
             return title.replace(" ", "-")
 
-        data = requests.get(
-            get_url(
-                "/api.php",
-                action="query",
-                format="json",
-                prop="categories",
-                titles=title,
+        def to_cat(title):
+            return to_mw_path(
+                re.sub(r"^" + self.metadata["category_prefix"] + ":", "", title)
             )
-        ).json()
-        pages = data["query"]["pages"]
-        page_id = list(pages.keys())[0]
-        try:
-            categories = pages[page_id]["categories"]
-        # has no category (ie. not a sub category)
-        except KeyError:
-            return []
-        prefix_len = len(self.metadata["category_prefix"]) + 1
-        return [to_mw_path(cat["title"][prefix_len:]) for cat in categories]
 
-    def build_exclude_lists(self):
-        """Using provided path/URL from --excldude, build list of exclusion
+        # keep track of queried cats as cross-cat is common (will be returned)
+        queried = set()
+        query_list = {title}  # start with initial request
 
-        List is stored on rewriter as it is responsible for removing links to
-        those articles and categories.
-        File must contain Article ID (URL path) or Category: category ID"""
-        if not self.conf.exclude:
+        while query_list:
+            query = query_list.pop()
+
+            # add to queried only if a category
+            if query.startswith(self.metadata["category_prefix"]):
+                queried.add(query)
+
+            data = requests.get(
+                get_url(
+                    "/api.php",
+                    action="query",
+                    format="json",
+                    prop="categories",
+                    titles=query,
+                )
+            ).json()
+            pages = data["query"]["pages"]
+            page_id = list(pages.keys())[0]
+            try:
+                categories = pages[page_id]["categories"]
+            # has no category (ie. not a sub category)
+            except KeyError:
+                continue
+
+            for category in categories:
+                if category["title"] not in queried:
+                    query_list.add(category["title"])
+
+        return [to_cat(query) for query in queried if to_cat(query) != to_cat(title)]
+
+    def build_filters_lists(self):
+        """Using provided path/URL from --exclude and --only, build (in|ex)clusion list
+
+        Lists are stored on rewriter as it is responsible for removing links to
+        articles and categories.
+
+        Exclusion file must contain Article ID (URL path) or Category: category ID
+        Inclusion file must contain Article ID (URL path"""
+        if not self.conf.exclude and not self.conf.only:
             return
 
         logger.info(f"Building exclusion list from {self.conf.exclude}")
-        excludes_fpath = self.build_dir / "excludes.lst"
-        handle_user_provided_file(source=self.conf.exclude, dest=excludes_fpath)
+        exclusion_fpath = self.build_dir / "exclusion.lst"
+        handle_user_provided_file(source=self.conf.exclude, dest=exclusion_fpath)
 
-        with open(excludes_fpath, "r") as fh:
+        with open(exclusion_fpath, "r") as fh:
             for line in fh.readlines():
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
                 if line.startswith("Category:"):
-                    self.rewriter.excluded_categories.add(line.split("Category:", 1)[1])
+                    self.rewriter.exclusion_categories.add(
+                        line.split("Category:", 1)[1]
+                    )
                 else:
-                    self.rewriter.excluded_articles.add(line)
+                    self.rewriter.exclusion_articles.add(line)
 
         logger.info(
-            f"> {len(self.rewriter.excluded_articles)} articles and "
-            f"{len(self.rewriter.excluded_categories)} categories excluded."
+            f"> {len(self.rewriter.exclusion_articles)} articles and "
+            f"{len(self.rewriter.exclusion_categories)} categories excluded."
         )
+
+        logger.info(f"Building inclusion list from {self.conf.only}")
+        inclusion_fpath = self.build_dir / "inclusion.lst"
+        handle_user_provided_file(source=self.conf.only, dest=inclusion_fpath)
+
+        with open(inclusion_fpath, "r") as fh:
+            for line in fh.readlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                self.rewriter.inclusion_articles.add(line)
+
+        logger.info(f"> {len(self.rewriter.inclusion_articles)} articles to include.")
 
     def add_homepage(self):
         if self.single_category:
@@ -473,7 +512,10 @@ class wikihow2zim(GlobalMixin):
             self.scrape_category(category, recurse)
 
     def scrape_category(self, category: str, recurse: bool = True):
-        if category in self.categories or category in self.rewriter.excluded_categories:
+        if (
+            category in self.categories
+            or category in self.rewriter.exclusion_categories
+        ):
             return
         self.categories.add(category)
 
@@ -557,7 +599,9 @@ class wikihow2zim(GlobalMixin):
                 + ["wikihow-category"]
             ),
             footer_links=self.metadata["footer_links"],
-            breadcrumbs=get_footer_crumbs_from(soup, self.rewriter.excluded_categories),
+            breadcrumbs=get_footer_crumbs_from(
+                soup, self.rewriter.exclusion_categories
+            ),
             title=title,
             **self.env_context,
         )
@@ -580,7 +624,14 @@ class wikihow2zim(GlobalMixin):
         return nb_pages, sub_categories
 
     def scrape_article(self, article, remove_all_links=False):
-        if article in self.articles or article in self.rewriter.excluded_articles:
+        if (
+            article in self.articles
+            or article in self.rewriter.exclusion_articles
+            or (
+                self.rewriter.inclusion_articles
+                and article not in self.rewriter.inclusion_articles
+            )
+        ):
             return
         self.articles.add(article)
 
@@ -657,7 +708,9 @@ class wikihow2zim(GlobalMixin):
                 + ["wikihow-article"]
             ),
             footer_links=self.metadata["footer_links"],
-            breadcrumbs=get_footer_crumbs_from(soup, self.rewriter.excluded_categories),
+            breadcrumbs=get_footer_crumbs_from(
+                soup, self.rewriter.exclusion_categories
+            ),
             title=title,
             **self.env_context,
         )
@@ -921,7 +974,7 @@ class wikihow2zim(GlobalMixin):
                 }
             )
 
-            self.build_exclude_lists()
+            self.build_filters_lists()
 
             if not self.conf.categories:
                 self.build_categories_list()
@@ -933,7 +986,7 @@ class wikihow2zim(GlobalMixin):
                     f"{self.metadata['category_prefix']}:{self.single_category}"
                 ):
                     logger.debug(f"Excluding category: {category}")
-                    self.rewriter.excluded_categories.add(category)
+                    self.rewriter.exclusion_categories.add(category)
 
             # start adding ZIM pages
             self.add_homepage()

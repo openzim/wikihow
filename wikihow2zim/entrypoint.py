@@ -116,6 +116,13 @@ def main():
     )
 
     parser.add_argument(
+        "--only",
+        help="Path or URL to a text file listing Article IDs to include in the scrape. "
+        "This filters out every other article. Lines starting with # are ignored",
+        dest="only",
+    )
+
+    parser.add_argument(
         "--optimization-cache",
         help="URL with credentials to S3 for using as optimization cache",
         dest="s3_url_with_credentials",
