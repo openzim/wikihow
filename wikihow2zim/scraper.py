@@ -27,7 +27,7 @@ from .utils import (
     get_soup,
     get_soup_of,
     get_subcategories_from,
-    get_url_raw,
+    get_url,
     normalize_ident,
     parse_css,
     setup_s3_and_check_credentials,
@@ -337,8 +337,12 @@ class wikihow2zim(GlobalMixin):
             return title.replace(" ", "-")
 
         data = requests.get(
-            get_url_raw(
-                f"/api.php?action=query&format=json&x&prop=categories&titles={title}"
+            get_url(
+                "/api.php",
+                action="query",
+                format="json",
+                prop="categories",
+                titles=title,
             )
         ).json()
         pages = data["query"]["pages"]
