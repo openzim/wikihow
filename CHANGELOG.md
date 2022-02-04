@@ -2,6 +2,8 @@
 
 - Fixed parent-categories retrieval for root categories
 - Fixed category page icon size (#106)
+- Parent categories retrieval now recursive
+- Added --only params for filtering
 
 # 1.0.2
 
