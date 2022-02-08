@@ -210,7 +210,7 @@ class Rewriter(GlobalMixin):
                         remove_link_for_exclusion(link, sdef)
                 else:
                     match = article_re.match(href)
-                    match_path = match.groupdict().get("path")
+                    match_path = match.groupdict().get("path") if match else None
                     if match and (
                         match_path in self.exclusion_articles
                         or (
