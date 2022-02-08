@@ -7,11 +7,11 @@
     <meta content="width=device-width" name="viewport"/>
     <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
     <meta content="#eaecf0" name="theme-color"/>
-    <link href="assets/vendor/videojs/video-js.min.css" rel="stylesheet">
-    <script src="assets/vendor/videojs/video.min.js"></script>
-    <script src="assets/vendor/ogvjs/ogv-support.js"></script>
-    <script src="assets/vendor/ogvjs/ogv.js"></script>
-    <script src="assets/vendor/videojs-ogvjs.js"></script>
+    <link href="{{ to_root }}assets/vendor/videojs/video-js.min.css" rel="stylesheet">
+    <script src="{{ to_root }}assets/vendor/videojs/video.min.js"></script>
+    <script src="{{ to_root }}assets/vendor/ogvjs/ogv-support.js"></script>
+    <script src="{{ to_root }}assets/vendor/ogvjs/ogv.js"></script>
+    <script src="{{ to_root }}assets/vendor/videojs-ogvjs.js"></script>
     <link href="{{ to_root }}apple-touch-icon.png" rel="apple-touch-icon"/>
     <link href="{{ to_root }}favicon.ico" rel="shortcut icon"/>
 {% if page_linked_styles %}
@@ -79,19 +79,6 @@
             </div>
         </div>
     </div>
-    <script type="text/javascript">
-        function extend(obj, src) {
-            Object.keys(src).forEach(function(key) { obj[key] = src[key]; });
-            return obj;
-        }
-
-        var vjs_options = {"techOrder": ["html5", "ogvjs"], "ogvjs": {"base": "assets/vendor/ogvjs"}, "controlBar": {"pictureInPictureToggle":false}};
-        // mobile safari won't autoplay muted loop webm
-        if (/(mobile|iphone|ipad).*safari*/i.test(navigator.userAgent)) { vjs_options.controls = true;}
-        document.querySelectorAll('.video-js').forEach(function(video) {
-            var options = extend(vjs_options, {preload: ((video.getAttribute("class") || "").indexOf("youtube") != -1) ? 'none': 'auto'});
-            videojs(video, options);
-        });
-    </script>
+    <script type="text/javascript" src="{{ to_root }}assets/wikihow2zim.js" /></script>
 </body>
 </html>
