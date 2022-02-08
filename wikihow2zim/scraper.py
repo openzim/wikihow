@@ -388,39 +388,43 @@ class wikihow2zim(GlobalMixin):
         if not self.conf.exclude and not self.conf.only:
             return
 
-        logger.info(f"Building exclusion list from {self.conf.exclude}")
-        exclusion_fpath = self.build_dir / "exclusion.lst"
-        handle_user_provided_file(source=self.conf.exclude, dest=exclusion_fpath)
+        if self.conf.exclude:
+            logger.info(f"Building exclusion list from {self.conf.exclude}")
+            exclusion_fpath = self.build_dir / "exclusion.lst"
+            handle_user_provided_file(source=self.conf.exclude, dest=exclusion_fpath)
 
-        with open(exclusion_fpath, "r") as fh:
-            for line in fh.readlines():
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                if line.startswith("Category:"):
-                    self.rewriter.exclusion_categories.add(
-                        line.split("Category:", 1)[1]
-                    )
-                else:
-                    self.rewriter.exclusion_articles.add(line)
+            with open(exclusion_fpath, "r") as fh:
+                for line in fh.readlines():
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if line.startswith("Category:"):
+                        self.rewriter.exclusion_categories.add(
+                            line.split("Category:", 1)[1]
+                        )
+                    else:
+                        self.rewriter.exclusion_articles.add(line)
 
-        logger.info(
-            f"> {len(self.rewriter.exclusion_articles)} articles and "
-            f"{len(self.rewriter.exclusion_categories)} categories excluded."
-        )
+            logger.info(
+                f"> {len(self.rewriter.exclusion_articles)} articles and "
+                f"{len(self.rewriter.exclusion_categories)} categories excluded."
+            )
 
-        logger.info(f"Building inclusion list from {self.conf.only}")
-        inclusion_fpath = self.build_dir / "inclusion.lst"
-        handle_user_provided_file(source=self.conf.only, dest=inclusion_fpath)
+        if self.conf.only:
+            logger.info(f"Building inclusion list from {self.conf.only}")
+            inclusion_fpath = self.build_dir / "inclusion.lst"
+            handle_user_provided_file(source=self.conf.only, dest=inclusion_fpath)
 
-        with open(inclusion_fpath, "r") as fh:
-            for line in fh.readlines():
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                self.rewriter.inclusion_articles.add(line)
+            with open(inclusion_fpath, "r") as fh:
+                for line in fh.readlines():
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    self.rewriter.inclusion_articles.add(line)
 
-        logger.info(f"> {len(self.rewriter.inclusion_articles)} articles to include.")
+            logger.info(
+                f"> {len(self.rewriter.inclusion_articles)} articles to include."
+            )
 
     def add_homepage(self):
         if self.single_category:
