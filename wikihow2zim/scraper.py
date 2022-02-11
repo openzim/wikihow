@@ -5,10 +5,12 @@ import pathlib
 import random
 import re
 import shutil
+from typing import Union
 
 import bs4
 import requests
 from jinja2 import Environment, FileSystemLoader
+from pywikiapi import Site
 from zimscraperlib.image.convertion import convert_image
 from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.inputs import handle_user_provided_file
@@ -17,7 +19,6 @@ from zimscraperlib.zim.items import URLItem
 from .constants import DEFAULT_HOMEPAGE, MAX_HTTP_404_THRESHOLD, ROOT_DIR, Conf
 from .shared import Global, GlobalMixin, logger
 from .utils import (
-    article_ident_for,
     cat_ident_for,
     fix_pagination_links,
     get_categorylisting_url,
@@ -26,12 +27,12 @@ from .utils import (
     get_footer_links_from,
     get_soup,
     get_soup_of,
-    get_subcategories_from,
-    get_url,
+    no_trailing_slash,
     normalize_ident,
     parse_css,
     setup_s3_and_check_credentials,
     soup_link_finder,
+    to_path,
     to_url,
 )
 
@@ -56,30 +57,25 @@ class wikihow2zim(GlobalMixin):
 
         # jinja context that we'll pass to all templates
         self.env_context = {"conf": Global.conf}
-
-        # set of all categories we've seen link for
-        # used to prevent processing a category twice as they cross-link each other
-        self.categories = set()
-        # idem, articles can be linked from different categories. we need
-        # to keep track of which we processed
-        self.articles = set()
-        # idem, resources from CSS that we'll downloaded.
+        # used to prevent twice processing the resources of CSS
+        # that we are going to download as they link to each other
         # Source HTML references a dynamic CSS that is built using a varietyof features
         # so it's very common different CSS urls references the same resources (imgs)
         self.resources_digests = set()
-        # idem, list of URLs which returned HTTP 404.
+        # List of URLs which returned HTTP 404.
         # There are legit scenarios for 404 on wikiHow: login pages
         # we need to track them for later use
         self.missing_articles = set()
         self.missing_categories = set()
-        # set of all articles we've seen in related-articles links.
-        # we'll go over this at end of categories scrape.
-        # those left are not listed in any category
-        self.related_articles = set()
 
     @property
-    def single_category(self):
-        return self.conf.categories[0] if len(self.conf.categories) == 1 else None
+    def single_category(self) -> Union[str, None]:
+        """Category name if a single category was requested. None otherwise"""
+        return (
+            list(self.expected_categories)[0]
+            if len(self.expected_categories) == 1
+            else None
+        )
 
     @property
     def build_dir(self):
@@ -263,7 +259,8 @@ class wikihow2zim(GlobalMixin):
                         content=self.get_from_cache(rsc_url),
                     )
             except Exception:
-                pass  # many are just not working at all
+                # many are just not working at all
+                logger.debug(f"Failed (OK) to add resource from {rsc_url}")
             else:
                 self.resources_digests.add(rsc_digest)
                 logger.debug(f"> {rsc_path}")
@@ -327,55 +324,68 @@ class wikihow2zim(GlobalMixin):
         logger.info("Building list of root categories")
 
         soup, _ = get_soup("/Special:CategoryListing")
-        self.conf.categories = [
+        self.conf.categories = {
             cat_ident_for(link.attrs["href"]) for link in soup.select("#catlist a")
-        ]
+        }
 
-    def get_categories_for(self, title: str):
-        """All categories returned by API for a title"""
+    def cleaned_category_title(self, title: str) -> str:
+        """Removed 'Category:' of the title."""
+        return re.sub(r"^" + self.metadata["category_prefix"] + r":", "", title)
 
-        def to_mw_path(title):
-            """API returned title to mediawiki URL"""
-            return title.replace(" ", "-")
+    def build_expected_categories(self):
+        """Retrieves list of all categories using the API. Filters based on flags"""
+        logger.info("Building list of expected categories")
 
-        def to_cat(title):
-            return to_mw_path(
-                re.sub(r"^" + self.metadata["category_prefix"] + ":", "", title)
-            )
-
-        # keep track of queried cats as cross-cat is common (will be returned)
-        queried = set()
-        query_list = {title}  # start with initial request
-
-        while query_list:
-            query = query_list.pop()
-
-            # add to queried only if a category
-            if query.startswith(self.metadata["category_prefix"]):
-                queried.add(query)
-
-            data = requests.get(
-                get_url(
-                    "/api.php",
-                    action="query",
-                    format="json",
-                    prop="categories",
-                    titles=query,
-                )
-            ).json()
-            pages = data["query"]["pages"]
-            page_id = list(pages.keys())[0]
-            try:
-                categories = pages[page_id]["categories"]
-            # has no category (ie. not a sub category)
-            except KeyError:
+        for category in self.conf.categories:
+            if category in self.exclusion_categories:
                 continue
 
-            for category in categories:
-                if category["title"] not in queried:
-                    query_list.add(category["title"])
+            if category.endswith("/"):
+                self.expected_categories.add(no_trailing_slash(category))
+                continue
 
-        return [to_cat(query) for query in queried if to_cat(query) != to_cat(title)]
+            # keep track of queried cats as cross-cat is common (will be returned)
+            query_list = {no_trailing_slash(category)}  # start with initial request
+
+            while query_list:
+                item = query_list.pop()
+                for query in Site(url=f"{to_url('/api.php')}").query(
+                    list="categorymembers",
+                    cmtitle=f"{self.metadata['category_prefix']}:{item}",
+                    cmtype="subcat",
+                ):
+                    for cat_member in query.get("categorymembers"):
+                        category_title = self.cleaned_category_title(
+                            cat_member.get("title")
+                        )
+                        logger.debug(f"subcat: {category_title}")
+                        if category_title not in self.exclusion_categories:
+                            query_list.add(category_title)
+                            self.expected_categories.add(category_title)
+        logger.info(f"Nb of Expected categories: {len(self.expected_categories)}")
+        logger.debug(f"List of Expected categories: {self.expected_categories}")
+
+    def build_expected_articles(self):
+        logger.info("Building list of expected articles")
+        for category in self.expected_categories:
+            logger.debug(f"Category: {category}")
+            for query in Site(url=f"{to_url('/api.php')}").query(
+                generator="categorymembers",
+                gcmtitle=f"{self.metadata['category_prefix']}:{category}",
+                prop="info",
+                inprop="url",
+            ):
+                for cat_member in query["pages"]:
+                    title = to_path(cat_member.get("fullurl"))
+                    if title in self.exclusion_articles:
+                        continue
+                    logger.debug(f"-> article: {title}")
+                    self.expected_articles.add(title)
+
+        logger.debug(
+            f"Nb of expected articles: {len(self.expected_articles)}\n"
+            f"List of Inclusion articles: {len(self.expected_articles)}"
+        )
 
     def build_filters_lists(self):
         """Using provided path/URL from --exclude and --only, build (in|ex)clusion list
@@ -398,16 +408,14 @@ class wikihow2zim(GlobalMixin):
                     line = line.strip()
                     if not line or line.startswith("#"):
                         continue
-                    if line.startswith("Category:"):
-                        self.rewriter.exclusion_categories.add(
-                            line.split("Category:", 1)[1]
-                        )
+                    if re.match(r"Category:.+", line):
+                        self.exclusion_categories.add(line.split("Category:", 1)[1])
                     else:
-                        self.rewriter.exclusion_articles.add(line)
+                        self.exclusion_articles.add(line)
 
             logger.info(
-                f"> {len(self.rewriter.exclusion_articles)} articles and "
-                f"{len(self.rewriter.exclusion_categories)} categories excluded."
+                f"> {len(self.exclusion_articles)} articles and "
+                f"{len(self.exclusion_categories)} categories to be excluded."
             )
 
         if self.conf.only:
@@ -420,11 +428,9 @@ class wikihow2zim(GlobalMixin):
                     line = line.strip()
                     if not line or line.startswith("#"):
                         continue
-                    self.rewriter.inclusion_articles.add(line)
+                    self.inclusion_list.add(line)
 
-            logger.info(
-                f"> {len(self.rewriter.inclusion_articles)} articles to include."
-            )
+            logger.info(f"> {len(self.inclusion_list)} articles to be included.")
 
     def add_homepage(self):
         if self.single_category:
@@ -499,45 +505,26 @@ class wikihow2zim(GlobalMixin):
             if link.path and link.path != "Main-Page":
                 self.scrape_article(link.path, remove_all_links=True)
 
-    def scrape_related_articles(self):
-        """Scrape and create all pages found in section related links"""
-        for link in list(self.related_articles):
-            if self.scrape_article(link) is None:
-                self.related_articles.remove(link)
+    def scrape_articles(self):
+        logger.info("Scraping expected articles")
+        for index, article in enumerate(self.expected_articles, 1):
+            logger.debug(f"{index}/{len(self.expected_articles)}")
+            if not self.scrape_article(article):
+                self.record_missing_url(to_url(f"/{article}"))
 
     def scrape_categories(self):
-        logger.info("Starting scraping from categories")
+        logger.info("Scraping expected category pages")
+        for category in self.expected_categories:
+            self.scrape_category(category)
 
-        recurse = True  # will fetch sub-categories
-        for category in self.conf.categories:
-            if category.endswith("/"):
-                category = category[:-1]
-                recurse = False
-            self.scrape_category(category, recurse)
-
-    def scrape_category(self, category: str, recurse: bool = True):
-        if (
-            category in self.categories
-            or category in self.rewriter.exclusion_categories
-        ):
-            return
-        self.categories.add(category)
-
-        logger.info(f"> Category:{category} ({recurse=})")
-
-        nb_pages, sub_categories = self.scrape_category_page(
-            category, page_num=1, recurse=recurse
-        )
-
+    def scrape_category(self, category: str):
+        logger.info(f"> Category:{category}")
+        nb_pages = self.scrape_category_page(category, page_num=1)
         if nb_pages > 1:
             for page_num in range(2, nb_pages + 1):
-                self.scrape_category_page(category, page_num=page_num, recurse=False)
+                self.scrape_category_page(category, page_num=page_num)
 
-        for sub_category in sub_categories or []:
-            self.scrape_category(sub_category)
-
-    def scrape_category_page(self, category: str, page_num: int, recurse: bool):
-
+    def scrape_category_page(self, category: str, page_num: int):
         category_url = f"/{self.metadata['category_prefix']}:{category}"
         params = {}
         if page_num > 1:
@@ -551,26 +538,12 @@ class wikihow2zim(GlobalMixin):
             if exc.response.status_code == 404:
                 logger.warning(">>> HTTP 404, skipping.")
                 self.missing_categories.add(category_url)
-                return 0, []
+                return 0
             raise exc
 
         fix_pagination_links(soup)
 
-        articles = set()
-        for link in soup.select("#cat_all .responsive_thumb a"):
-            articles.add(article_ident_for(link.attrs.get("href")))
-
-        for article in articles:
-            if not self.scrape_article(article):
-                missing_url = to_url(f"/{article}")
-                for a in soup.find_all("a", href=missing_url):
-                    del a["href"]
-                self.record_missing_url(missing_url)
-            # break  # only one article per page
-
         nb_pages = len(soup.select("#large_pagination ul li"))
-
-        sub_categories = get_subcategories_from(soup, recurse)
 
         # extract and clean main content
         content = soup.select("div#content_wrapper")[0]
@@ -584,6 +557,11 @@ class wikihow2zim(GlobalMixin):
         )
         for selector in black_list:
             _ = [elem.decompose() for elem in content.select(selector)]
+
+        # remove links to unexpected articles in category description (near top)
+        for link in content.select("#cat_description a[href]"):
+            if to_path(link.attrs["href"]) not in self.expected_articles:
+                del link.attrs["href"]
 
         # zim article path
         path = paths.pop()
@@ -603,9 +581,7 @@ class wikihow2zim(GlobalMixin):
                 + ["wikihow-category"]
             ),
             footer_links=self.metadata["footer_links"],
-            breadcrumbs=get_footer_crumbs_from(
-                soup, self.rewriter.exclusion_categories
-            ),
+            breadcrumbs=get_footer_crumbs_from(soup),
             title=title,
             **self.env_context,
         )
@@ -625,20 +601,9 @@ class wikihow2zim(GlobalMixin):
                     target_path=path,
                 )
 
-        return nb_pages, sub_categories
+        return nb_pages
 
     def scrape_article(self, article, remove_all_links=False):
-        if (
-            article in self.articles
-            or article in self.rewriter.exclusion_articles
-            or (
-                self.rewriter.inclusion_articles
-                and article not in self.rewriter.inclusion_articles
-            )
-        ):
-            return
-        self.articles.add(article)
-
         logger.info(f">> Article:{article}")
 
         try:
@@ -693,11 +658,6 @@ class wikihow2zim(GlobalMixin):
             for elem in content.select("a[href]"):
                 del elem.attrs["href"]
 
-        for link in content.select("div.section.relatedwikihows a[href]"):
-            rel_article = re.sub(r"^/", "", normalize_ident(link.attrs["href"]))
-            if rel_article not in self.articles:
-                self.related_articles.add(rel_article)
-
         self.handle_videos_for(soup)
 
         # some articles include a `/`. ex: Système-Macintosh/Apple
@@ -712,9 +672,7 @@ class wikihow2zim(GlobalMixin):
                 + ["wikihow-article"]
             ),
             footer_links=self.metadata["footer_links"],
-            breadcrumbs=get_footer_crumbs_from(
-                soup, self.rewriter.exclusion_categories
-            ),
+            breadcrumbs=get_footer_crumbs_from(soup),
             title=title,
             **self.env_context,
         )
@@ -801,7 +759,7 @@ class wikihow2zim(GlobalMixin):
             poster_path = Global.imager.defer(
                 url=to_url(video.attrs.get("poster", video.attrs.get("data-poster")))
             )
-            # remove extra “controls” and watermark (from .video-player) :requires JS
+            # remove extra “controls” and watermark (from .video-player):requires JS
             for elem in video.parent.parent.select(".m-video-controls, .m-video-wm"):
                 elem.decompose()
 
@@ -977,20 +935,23 @@ class wikihow2zim(GlobalMixin):
                     "homepage_name": self.metadata["homepage_name"],
                 }
             )
-
             self.build_filters_lists()
+            if self.inclusion_list:
+                for title in self.inclusion_list:
+                    if title.startswith("Category:"):
+                        self.expected_categories.add(self.cleaned_category_title(title))
+                    else:
+                        self.expected_articles.add(title)
+                logger.info(
+                    f"Nb expected articles: {len(self.expected_articles)}"
+                    f"\nExpected categories {self.expected_categories}"
+                )
+            else:
+                if not self.conf.categories:
+                    self.build_categories_list()
 
-            if not self.conf.categories:
-                self.build_categories_list()
-
-            # exclude categories of the requested category in case of single cat req.
-            # prevents breadcrumbs from including parent categories links
-            if self.single_category:
-                for category in self.get_categories_for(
-                    f"{self.metadata['category_prefix']}:{self.single_category}"
-                ):
-                    logger.debug(f"Excluding category: {category}")
-                    self.rewriter.exclusion_categories.add(category)
+                self.build_expected_categories()
+                self.build_expected_articles()
 
             # start adding ZIM pages
             self.add_homepage()
@@ -1001,21 +962,17 @@ class wikihow2zim(GlobalMixin):
             if self.conf.single_article:
                 self.scrape_article(self.conf.single_article)
             else:
+                self.scrape_articles()
                 self.scrape_categories()
 
-            if not self.conf.skip_relateds:
-                self.scrape_related_articles()
-
             logger.info(
-                f"Stats: {len(self.categories)} categories, "
-                f"{len(self.articles)} articles, "
+                f"Stats: {len(self.expected_categories)} categories, "
+                f"{len(self.expected_articles)} articles, "
                 f"{len(self.missing_categories)} missing categories, "
                 f"{len(self.missing_articles)} missing articles, "
-                f"{len(self.related_articles)} related articles, "
                 f"{self.imager.nb_requested} images, "
                 f"{self.vidgrabber.nb_requested} videos"
             )
-
             logger.info("Awaiting images")
             Global.img_executor.shutdown()
 

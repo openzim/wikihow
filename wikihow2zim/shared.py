@@ -31,6 +31,13 @@ class Global:
     rewriter = None
     lock = threading.Lock()
 
+    exclusion_articles = set()
+    exclusion_categories = set()
+    inclusion_list = set()
+
+    expected_articles = set()
+    expected_categories = set()
+
     @staticmethod
     def set_debug(value):
         Global.debug = value
@@ -126,6 +133,26 @@ class GlobalMixin:
     @property
     def rewriter(self):
         return Global.rewriter
+
+    @property
+    def inclusion_list(self):
+        return Global.inclusion_list
+
+    @property
+    def exclusion_articles(self):
+        return Global.exclusion_articles
+
+    @property
+    def exclusion_categories(self):
+        return Global.exclusion_categories
+
+    @property
+    def expected_articles(self):
+        return Global.expected_articles
+
+    @property
+    def expected_categories(self):
+        return Global.expected_categories
 
 
 logger = Global.logger

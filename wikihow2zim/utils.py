@@ -7,7 +7,7 @@ import io
 import re
 import urllib.parse
 import zlib
-from typing import Iterable, List, Set, Tuple, Union
+from typing import Iterable, List, Tuple, Union
 
 import bs4
 import cssbeautifier
@@ -20,6 +20,11 @@ from zimscraperlib.download import _get_retry_adapter, stream_file
 from .shared import Global, logger
 
 nlink = collections.namedtuple("Link", ("path", "name", "title"))
+
+
+def to_path(url: str) -> str:
+    """Path-part of an URL, without leading slash"""
+    return re.sub(r"^/", "", urllib.parse.urlparse(url).path)
 
 
 def get_url(path: str, **params) -> str:
@@ -46,9 +51,14 @@ def to_rel(url: str) -> Union[None, str]:
     return uri.path
 
 
-def no_leading_slash(text: str):
+def no_leading_slash(text: str) -> str:
     """text with leading slash removed if present"""
     return re.sub(r"^/", "", text)
+
+
+def no_trailing_slash(text: str) -> str:
+    """text with trailing slash removed if present"""
+    return re.sub(r"/$", "", text)
 
 
 def only_path_of(url: str):
@@ -86,9 +96,7 @@ def get_soup_of(text: str, unwrap: bool = False):
     return soup
 
 
-def get_footer_crumbs_from(
-    soup: bs4.element.Tag, excluded_categories: Set
-) -> List[Tuple[str, str, str]]:
+def get_footer_crumbs_from(soup: bs4.element.Tag) -> List[Tuple[str, str, str]]:
     """List of (url, name and title) of footer breadcrumbs"""
 
     crumbs = []
@@ -100,7 +108,7 @@ def get_footer_crumbs_from(
             cat_ident = cat_ident_for(link.attrs["href"])
         except Exception:
             cat_ident = None
-        if cat_ident is None or cat_ident not in excluded_categories:
+        if cat_ident is None or cat_ident in Global.expected_categories:
             crumbs.append(
                 nlink(link.attrs["href"][1:], link.string, link.attrs.get("title"))
             )
@@ -165,15 +173,6 @@ def fix_pagination_links(soup: bs4.element.Tag):
     """Replace ?pg= to _pg= in pagination links"""
     for a in soup.select("#large_pagination a[href]"):
         a["href"] = a["href"].replace("?pg=", "_pg=")
-
-
-def get_subcategories_from(soup: bs4.element.Tag, recurse: bool) -> List[str]:
-    """sub-categories urls from a category soup"""
-    if recurse:
-        return [
-            cat_ident_for(link.attrs["href"])
-            for link in soup.select("div#subcats * a.cat_link")
-        ]
 
 
 def get_categorylisting_url():
