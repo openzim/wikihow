@@ -4,7 +4,7 @@ import pathlib
 import tempfile
 import urllib.parse
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from zimscraperlib.i18n import get_language_details
 
@@ -84,7 +84,7 @@ class Conf:
     video_format: Optional[str] = "webm"
 
     # debug/devel
-    categories: List[str] = field(default_factory=list)
+    categories: Set[str] = field(default_factory=set)
     build_dir_is_tmp_dir: Optional[bool] = False
     keep_build_dir: Optional[bool] = False
     debug: Optional[bool] = False
@@ -94,6 +94,7 @@ class Conf:
     skip_footer_links: Optional[bool] = False
     skip_relateds: Optional[bool] = False
     single_article: Optional[str] = ""
+    full_mode: Optional[bool] = False
 
     @staticmethod
     def get_url(lang_code):
@@ -133,3 +134,5 @@ class Conf:
                 if ";" in tag:
                     self.tag += [p.strip() for p in tag.split(";")]
                     self.tag.remove(tag)
+
+        self.full_mode = not self.categories and not self.only and not self.exclude

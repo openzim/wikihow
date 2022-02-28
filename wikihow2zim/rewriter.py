@@ -61,9 +61,6 @@ class Rewriter(GlobalMixin):
 
         # sets of articles and categories that should not be included
         # filled by --exclude option
-        self.exclusion_articles = set()
-        self.exclusion_categories = set()
-        self.inclusion_articles = set()
 
     def rewrite(self, content: str, to_root: str = "", unwrap: bool = False):
         if not content:
@@ -163,11 +160,8 @@ class Rewriter(GlobalMixin):
         ).geturl()
 
     def rewrite_links_for_excludes(self, soup, to_root):
-        if (
-            not self.exclusion_articles
-            and not self.exclusion_categories
-            and not self.inclusion_articles
-        ):
+        # Stop execution of this function if program is full mode.
+        if self.conf.full_mode:
             return
 
         article_re = re.compile(r"^" + to_root + r"(?P<path>.+)")
@@ -190,8 +184,11 @@ class Rewriter(GlobalMixin):
             seldef("#catlist_container #catlist a[href]", True, True, False),
             # top breadcrumb in article page
             seldef(".breadcrumbs a[href]", True, True, False),
+            # top breadcrumb in article page
+            seldef("#footer_crumbs .breadcrumbs a[href]", True, True, False),
             # list of categories article is in  - in About section of article page
             seldef(".sp_box.sp_fullbox a[href]", True, True, True),
+            seldef(".cat_grid .responsive_thumb a[href]", True, True, True),
         ]
 
         for sdef in selectors:
@@ -203,21 +200,13 @@ class Rewriter(GlobalMixin):
                     continue
                 if sdef.for_category:
                     match = category_re.match(href)
-                    if (
-                        match
-                        and match.groupdict().get("path") in self.exclusion_categories
-                    ):
+                    match_path = match.groupdict().get("path") if match else None
+                    if match_path and match_path not in self.expected_categories:
                         remove_link_for_exclusion(link, sdef)
                 else:
                     match = article_re.match(href)
                     match_path = match.groupdict().get("path") if match else None
-                    if match and (
-                        match_path in self.exclusion_articles
-                        or (
-                            self.inclusion_articles
-                            and match_path not in self.inclusion_articles
-                        )
-                    ):
+                    if match_path and match_path not in self.expected_articles:
                         remove_link_for_exclusion(link, sdef)
 
     def remove_empty_sections(self, soup, to_root):
