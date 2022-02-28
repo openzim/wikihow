@@ -989,6 +989,8 @@ class wikihow2zim(GlobalMixin):
                 logger.exception(exc)
             self.imager.abort()
             Global.img_executor.shutdown(wait=False)
+            self.vidgrabber.abort()
+            Global.video_executor.shutdown(wait=False)
             return 1
         else:
             logger.info("Finishing ZIM file")
