@@ -3,6 +3,7 @@
 - Fixed parent-categories retrieval for root categories
 - Fixed category page icon size (#106)
 - Now works off an expected list of articles/categories
+- Removed devel param --skip-related
 
 # 1.0.2
 

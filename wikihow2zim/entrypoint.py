@@ -181,14 +181,6 @@ def main():
     )
 
     parser.add_argument(
-        "--skip-relateds",
-        help="[dev] Don't fetch related articles from found articles",
-        default=False,
-        action="store_true",
-        dest="skip_relateds",
-    )
-
-    parser.add_argument(
         "--single-article",
         help="[dev] Don't scrape categories, just that single article instead",
         dest="single_article",

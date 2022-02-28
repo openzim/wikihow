@@ -92,7 +92,6 @@ class Conf:
     stats_filename: Optional[str] = None
     skip_dom_check: Optional[bool] = False
     skip_footer_links: Optional[bool] = False
-    skip_relateds: Optional[bool] = False
     single_article: Optional[str] = ""
     full_mode: Optional[bool] = False
 
