@@ -99,19 +99,19 @@ class Conf:
     single_category: Optional[str] = None
 
     @staticmethod
-    def get_url(lang_code):
+    def get_url(lang_code: str) -> urllib.parse.ParseResult:
         return urllib.parse.urlparse(URLS[lang_code])
 
     @property
-    def domain(self):
+    def domain(self) -> str:
         return self.main_url.netloc
 
     @property
-    def s3_url(self):
+    def s3_url(self) -> str:
         return self.s3_url_with_credentials
 
     @property
-    def api_delay(self):
+    def api_delay(self) -> float:
         return self.api_pause_delay / 1000 if self.api_pause_delay else 0
 
     def __post_init__(self):
