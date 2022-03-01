@@ -4,6 +4,7 @@
 - Fixed category page icon size (#106)
 - Now works off an expected list of articles/categories
 - Removed devel param --skip-related
+- Added --api-pause-delay option
 
 # 1.0.2
 
