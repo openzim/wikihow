@@ -330,8 +330,9 @@ class wikihow2zim(GlobalMixin):
             if category in self.exclusion_categories:
                 continue
 
+            self.expected_categories.add(no_trailing_slash(category))
+
             if category.endswith("/"):
-                self.expected_categories.add(no_trailing_slash(category))
                 continue
 
             # keep track of queried cats as cross-cat is common (will be returned)
@@ -372,10 +373,7 @@ class wikihow2zim(GlobalMixin):
                     logger.debug(f"-> article: {title}")
                     self.expected_articles.add(title)
 
-        logger.debug(
-            f"Nb of expected articles: {len(self.expected_articles)}\n"
-            f"List of Inclusion articles: {len(self.expected_articles)}"
-        )
+        logger.info(f"Nb of expected articles: {len(self.expected_articles)}")
 
     def build_filters_lists(self):
         """Using provided path/URL from --exclude and --only, build (in|ex)clusion list
