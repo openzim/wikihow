@@ -214,12 +214,12 @@ class Rewriter(GlobalMixin):
         removed_relateds = False
         for section_sel in (".section.relatedwikihows", ".sidebox.related_articles"):
             for section in soup.select(section_sel):
-                if not len(section.select("a")):
+                if not section.select("a"):
                     removed_relateds = True
                     section.decompose()
 
         if removed_relateds:
-            [item.decompose() for item in soup.select("#rwh_toc")]
+            _ = [item.decompose() for item in soup.select("#rwh_toc")]
 
     def rewrite_images(self, soup, to_root):
         for img in soup.find_all("img"):
