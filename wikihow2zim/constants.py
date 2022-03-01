@@ -72,6 +72,7 @@ class Conf:
     _tmp_dir: Optional[str] = "."
     output_dir: Optional[pathlib.Path] = None
     tmp_dir: Optional[pathlib.Path] = None
+    api_pause_delay: Optional[int] = 0
 
     # performances
     nb_threads: Optional[int] = -1
@@ -108,6 +109,10 @@ class Conf:
     @property
     def s3_url(self):
         return self.s3_url_with_credentials
+
+    @property
+    def api_delay(self):
+        return self.api_pause_delay / 1000 if self.api_pause_delay else 0
 
     def __post_init__(self):
         self.main_url = Conf.get_url(self.lang_code)

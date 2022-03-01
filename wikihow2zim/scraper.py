@@ -5,6 +5,7 @@ import pathlib
 import random
 import re
 import shutil
+import time
 
 import bs4
 import requests
@@ -353,6 +354,10 @@ class wikihow2zim(GlobalMixin):
                         if category_title not in self.exclusion_categories:
                             query_list.add(category_title)
                             self.expected_categories.add(category_title)
+
+                    if self.conf.api_delay:
+                        time.sleep(self.conf.api_delay)
+
         logger.info(f"Nb of Expected categories: {len(self.expected_categories)}")
         logger.debug(f"List of Expected categories: {self.expected_categories}")
 
@@ -372,6 +377,9 @@ class wikihow2zim(GlobalMixin):
                         continue
                     logger.debug(f"-> article: {title}")
                     self.expected_articles.add(title)
+
+                if self.conf.api_delay:
+                    time.sleep(self.conf.api_delay)
 
         logger.info(f"Nb of expected articles: {len(self.expected_articles)}")
 

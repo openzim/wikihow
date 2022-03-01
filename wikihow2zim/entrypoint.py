@@ -199,6 +199,14 @@ def main():
         version=SCRAPER,
     )
 
+    parser.add_argument(
+        "--api-pause-delay",
+        help="Nb. of miliseconds to wait in-between API queries (!= calls). "
+        "Otherwise, no delay (may trigger errors from server)",
+        default=0,
+        type=int,
+    )
+
     args = parser.parse_args()
     Global.set_debug(args.debug)
 
