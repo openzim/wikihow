@@ -5,7 +5,6 @@ import pathlib
 import random
 import re
 import shutil
-from typing import Union
 
 import bs4
 import requests
@@ -67,15 +66,6 @@ class wikihow2zim(GlobalMixin):
         # we need to track them for later use
         self.missing_articles = set()
         self.missing_categories = set()
-
-    @property
-    def single_category(self) -> Union[str, None]:
-        """Category name if a single category was requested. None otherwise"""
-        return (
-            list(self.expected_categories)[0]
-            if len(self.expected_categories) == 1
-            else None
-        )
 
     @property
     def build_dir(self):
@@ -433,19 +423,19 @@ class wikihow2zim(GlobalMixin):
             logger.info(f"> {len(self.inclusion_list)} articles to be included.")
 
     def add_homepage(self):
-        if self.single_category:
-            logger.info(f"Using {self.single_category} as homepage")
+        if self.conf.single_category:
+            logger.info(f"Using {self.conf.single_category} as homepage")
 
             with self.lock:
                 self.creator.add_redirect(
                     path=self.metadata["homepage_name"],
                     target_path=f'{self.metadata["category_prefix"]}:'
-                    f"{self.single_category}",
+                    f"{self.conf.single_category}",
                 )
                 self.creator.add_redirect(
                     path=DEFAULT_HOMEPAGE,
                     target_path=f'{self.metadata["category_prefix"]}:'
-                    f"{self.single_category}",
+                    f"{self.conf.single_category}",
                 )
                 self.creator.add_redirect(
                     path=self.metadata["url_special_category"],
@@ -897,6 +887,7 @@ class wikihow2zim(GlobalMixin):
             f" ({self.conf.domain})\n"
             f"  output_dir: {self.conf.output_dir}\n"
             f"  build_dir: {self.build_dir}\n"
+            f"  single_category: {self.conf.single_category}\n"
             f"  categories: "
             f"{', '.join(self.conf.categories)if self.conf.categories else 'all'}"
             f"{s3_msg}"

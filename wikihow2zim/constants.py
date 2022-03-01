@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
+import re
 import tempfile
 import urllib.parse
 from dataclasses import dataclass, field
@@ -64,6 +65,7 @@ class Conf:
 
     # customization
     icon: Optional[str] = ""
+    categories: Set[str] = field(default_factory=set)
 
     # filesystem
     _output_dir: Optional[str] = "."
@@ -84,7 +86,6 @@ class Conf:
     video_format: Optional[str] = "webm"
 
     # debug/devel
-    categories: Set[str] = field(default_factory=set)
     build_dir_is_tmp_dir: Optional[bool] = False
     keep_build_dir: Optional[bool] = False
     debug: Optional[bool] = False
@@ -94,6 +95,7 @@ class Conf:
     skip_footer_links: Optional[bool] = False
     single_article: Optional[str] = ""
     full_mode: Optional[bool] = False
+    single_category: Optional[str] = None
 
     @staticmethod
     def get_url(lang_code):
@@ -134,4 +136,11 @@ class Conf:
                     self.tag += [p.strip() for p in tag.split(";")]
                     self.tag.remove(tag)
 
+        # the solely requested category or None
+        self.single_category = (
+            re.sub(r"/$", "", list(self.categories)[0])
+            if len(self.categories) == 1
+            else None
+        )
+        # whether requesting a _full mode_ (complete wiki)
         self.full_mode = not self.categories and not self.only and not self.exclude
