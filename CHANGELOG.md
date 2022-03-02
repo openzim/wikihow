@@ -1,8 +1,7 @@
 # 1.1.0
 
-- Fixed parent-categories retrieval for root categories
+- Revamped to work off an expected list of articles/categories fetched from API
 - Fixed category page icon size (#106)
-- Now works off an expected list of articles/categories
 - Removed devel param --skip-related
 - Added --api-pause-delay option
 

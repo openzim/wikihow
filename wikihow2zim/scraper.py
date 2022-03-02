@@ -347,6 +347,9 @@ class wikihow2zim(GlobalMixin):
                     cmtype="subcat",
                 ):
                     for cat_member in query.get("categorymembers"):
+                        # only interested in (sub)categories
+                        if cat_member.get("ns") != 14:
+                            continue
                         category_title = self.cleaned_category_title(
                             cat_member.get("title")
                         )
@@ -368,10 +371,14 @@ class wikihow2zim(GlobalMixin):
             for query in Site(url=f"{to_url('/api.php')}").query(
                 generator="categorymembers",
                 gcmtitle=f"{self.metadata['category_prefix']}:{category}",
+                gcmtype="page",
                 prop="info",
                 inprop="url",
             ):
                 for cat_member in query["pages"]:
+                    # only interested in actual articles
+                    if cat_member.get("ns") != 0:
+                        continue
                     title = to_path(cat_member.get("fullurl"))
                     if title in self.exclusion_articles:
                         continue
