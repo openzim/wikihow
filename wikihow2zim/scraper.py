@@ -507,6 +507,8 @@ class wikihow2zim(GlobalMixin):
             # to create wikiHo Main-Page (already added a redirect in homepage)
             if link.path and link.path != "Main-Page":
                 self.scrape_article(link.path, remove_all_links=True)
+            if self.conf.delay:
+                time.sleep(self.conf.delay)
 
     def scrape_articles(self):
         logger.info("Scraping expected articles")
@@ -514,6 +516,8 @@ class wikihow2zim(GlobalMixin):
             logger.debug(f"{index}/{len(self.expected_articles)}")
             if not self.scrape_article(article):
                 self.record_missing_url(to_url(f"/{article}"))
+            if self.conf.delay:
+                time.sleep(self.conf.delay)
 
     def scrape_categories(self):
         logger.info("Scraping expected category pages")
@@ -526,6 +530,8 @@ class wikihow2zim(GlobalMixin):
         if nb_pages > 1:
             for page_num in range(2, nb_pages + 1):
                 self.scrape_category_page(category, page_num=page_num)
+                if self.conf.delay:
+                    time.sleep(self.conf.delay)
 
     def scrape_category_page(self, category: str, page_num: int):
         category_url = f"/{self.metadata['category_prefix']}:{category}"

@@ -165,6 +165,13 @@ def main():
     )
 
     parser.add_argument(
+        "--api-delay",
+        help="Add this delay (seconds) before each API query (!= calls) to please "
+        "wikiHow servers. Can be fractions. Defaults to 0: no delay",
+        type=float,
+    )
+
+    parser.add_argument(
         "--skip-dom-check",
         help="[dev] Don't perform DOM Integrity Checks on start",
         default=False,
@@ -197,14 +204,6 @@ def main():
         help="Display scraper version and exit",
         action="version",
         version=SCRAPER,
-    )
-
-    parser.add_argument(
-        "--api-pause-delay",
-        help="Nb. of miliseconds to wait in-between API queries (!= calls). "
-        "Otherwise, no delay (may trigger errors from server)",
-        default=0,
-        type=int,
     )
 
     args = parser.parse_args()
