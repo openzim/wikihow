@@ -137,6 +137,8 @@ class Conf:
                     self.tag += [p.strip() for p in tag.split(";")]
                     self.tag.remove(tag)
 
+        self.categories = set() if self.categories is None else self.categories
+
         # the solely requested category or None
         self.single_category = (
             re.sub(r"/$", "", list(self.categories)[0])
