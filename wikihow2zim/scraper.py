@@ -341,7 +341,7 @@ class wikihow2zim(GlobalMixin):
 
             while query_list:
                 item = query_list.pop()
-                for query in Site(url=f"{to_url('/api.php')}").query(
+                for query in self.api_site.query(
                     list="categorymembers",
                     cmtitle=f"{self.metadata['category_prefix']}:{item}",
                     cmtype="subcat",
@@ -368,7 +368,7 @@ class wikihow2zim(GlobalMixin):
         logger.info("Building list of expected articles")
         for category in self.expected_categories:
             logger.debug(f"Category: {category}")
-            for query in Site(url=f"{to_url('/api.php')}").query(
+            for query in self.api_site.query(
                 generator="categorymembers",
                 gcmtitle=f"{self.metadata['category_prefix']}:{category}",
                 gcmtype="page",
@@ -934,6 +934,11 @@ class wikihow2zim(GlobalMixin):
         self.creator.start()
 
         try:
+            self.api_site = Site(
+                url=f"{to_url('/api.php')}",
+                retry_after_conn=10,  # nb seconds to wait on ConnError
+                pre_request_delay=self.conf.api_delay,  # nb seconds to wait before each
+            )
             self.add_illustrations()
             self.add_assets()
             self.env_context.update(
