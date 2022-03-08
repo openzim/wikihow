@@ -2,6 +2,7 @@
 
 import pathlib
 import subprocess
+import sys
 
 from setuptools import setup
 
@@ -12,6 +13,22 @@ def read(*names, **kwargs):
     with open(root_dir.joinpath(*names), "r") as fh:
         return fh.read()
 
+
+print("Installing a fork of pywikiapi")
+subprocess.run(
+    [
+        sys.executable,
+        "-m",
+        "pip",
+        "install",
+        [
+            line.strip()
+            for line in read("requirements.txt").splitlines()
+            if "/pywikiapi" in line
+        ][-1],
+    ],
+    check=True,
+)
 
 print("Downloading JS dependencies...")
 subprocess.run([str(root_dir.joinpath("get_js_deps.sh").resolve())], check=True)
@@ -32,7 +49,7 @@ setup(
     install_requires=[
         line.strip()
         for line in read("requirements.txt").splitlines()
-        if not line.strip().startswith("#")
+        if not line.strip().startswith("#") and not line.startswith("https://")
     ],
     zip_safe=False,
     include_package_data=True,

@@ -929,16 +929,25 @@ class wikihow2zim(GlobalMixin):
         )
         self.sanitize_inputs()
 
-        logger.debug("Starting Zim creation")
-        Global.setup()
-        self.creator.start()
-
         try:
             self.api_site = Site(
                 url=f"{to_url('/api.php')}",
                 retry_after_conn=10,  # nb seconds to wait on ConnError
                 pre_request_delay=self.conf.api_delay,  # nb seconds to wait before each
             )
+        except TypeError as exc:
+            logger.error(
+                "TypeError creating Site(). You may be using "
+                "an incorrect version of pywikiapi. Check dependencies requirements"
+            )
+            logger.exception(exc)
+            return 1
+
+        logger.debug("Starting Zim creation")
+        Global.setup()
+        self.creator.start()
+
+        try:
             self.add_illustrations()
             self.add_assets()
             self.env_context.update(
