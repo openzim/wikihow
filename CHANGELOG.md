@@ -2,9 +2,10 @@
 
 - Revamped to work off an expected list of articles/categories fetched from API
 - Fixed category page icon size (#106)
-- Removed devel param --skip-related
+- Removed devel param --skip-relateds
 - Added --api-delay option
 - Using the previously unused --delay option
+- Better exit upon errors (#105)
 
 # 1.0.2
 
