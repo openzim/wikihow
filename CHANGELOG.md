@@ -1,3 +1,7 @@
+# 1.1.1
+
+- Increaded (5 -> 10) number of retries on (non-api) request errors
+
 # 1.1.0
 
 - Revamped to work off an expected list of articles/categories fetched from API

@@ -73,7 +73,7 @@ def fetch(path: str, **params) -> str:
     Without redirection, it should be a single path, equal to request
     Final, target path is always last"""
     session = requests.Session()
-    session.mount("http", _get_retry_adapter(5))  # tied to http and https
+    session.mount("http", _get_retry_adapter(10))  # tied to http and https
     resp = session.get(get_url(path, **params), params=params)
     resp.raise_for_status()
 
