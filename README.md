@@ -1,6 +1,6 @@
-# wikihow
+# wikiHow
 
-`wikihow2zim` is an [OpenZIM](https://github.com/openzim) scraper to create offline versions of [wikiHow](https://www.wikihow.com) websites, in all its supported languages.
+`wikihow2zim` is an [OpenZIM](https://openzim.org) scraper to create offline versions of [wikiHow](https://www.wikihow.com) websites, in all its supported languages.
 
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/wikihow/badge)](https://www.codefactor.io/repository/github/openzim/wikihow)
 [![Docker](https://img.shields.io/docker/v/openzim/wikihow?label=docker&sort=semver)](https://hub.docker.com/r/openzim/wikihow)
