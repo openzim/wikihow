@@ -353,6 +353,8 @@ class wikihow2zim(GlobalMixin):
                         category_title = self.cleaned_category_title(
                             cat_member.get("title")
                         )
+                        if category_title in self.expected_categories:
+                            continue
                         logger.debug(f"subcat: {category_title}")
                         if category_title not in self.exclusion_categories:
                             query_list.add(category_title)
