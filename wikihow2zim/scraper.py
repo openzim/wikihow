@@ -381,7 +381,7 @@ class wikihow2zim(GlobalMixin):
                     # only interested in actual articles
                     if cat_member.get("ns") != 0:
                         continue
-                    title = to_path(cat_member.get("fullurl"))
+                    title = to_path(normalize_ident(cat_member.get("fullurl")))
                     if title in self.exclusion_articles:
                         continue
                     logger.debug(f"-> article: {title}")
