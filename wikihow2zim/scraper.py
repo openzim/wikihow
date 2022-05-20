@@ -16,7 +16,7 @@ from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.inputs import handle_user_provided_file
 from zimscraperlib.zim.items import URLItem
 
-from .constants import DEFAULT_HOMEPAGE, MAX_HTTP_404_THRESHOLD, ROOT_DIR, Conf
+from .constants import DEFAULT_HOMEPAGE, ROOT_DIR, Conf
 from .shared import Global, GlobalMixin, logger
 from .utils import (
     cat_ident_for,
@@ -699,10 +699,12 @@ class wikihow2zim(GlobalMixin):
 
     def record_missing_url(self, url):
         self.missing_articles.add(url)
+        threshold = int(len(self.expected_articles) * self.conf.missing_tolerance / 100)
 
-        if len(self.missing_articles) >= MAX_HTTP_404_THRESHOLD:
-            logger.debug(
-                f"Maximum HTTP 404 threshold reached ({MAX_HTTP_404_THRESHOLD})"
+        if len(self.missing_articles) >= threshold:
+            raise IOError(
+                "Maximum HTTP 404 threshold reached "
+                f"({threshold} ~= {self.conf.missing_tolerance}% )"
             )
 
     def handle_videos_for(self, soup: bs4.element.Tag):
@@ -908,6 +910,7 @@ class wikihow2zim(GlobalMixin):
             f" ({self.conf.domain})\n"
             f"  output_dir: {self.conf.output_dir}\n"
             f"  build_dir: {self.build_dir}\n"
+            f"  missing tolerance: {self.conf.missing_tolerance}%\n"
             f"  single_category: {self.conf.single_category}\n"
             f"  categories: "
             f"{', '.join(self.conf.categories)if self.conf.categories else 'all'}"

@@ -12,7 +12,6 @@ from zimscraperlib.i18n import get_language_details
 ROOT_DIR = pathlib.Path(__file__).parent
 NAME = ROOT_DIR.name
 DEFAULT_HOMEPAGE = "Main-Page"
-MAX_HTTP_404_THRESHOLD = 200
 
 with open(ROOT_DIR.joinpath("VERSION"), "r") as fh:
     VERSION = fh.read().strip()
@@ -84,6 +83,7 @@ class Conf:
     only: Optional[str] = ""
     low_quality: Optional[bool] = False
     video_format: Optional[str] = "webm"
+    missing_tolerance: Optional[int] = 0
 
     # debug/devel
     build_dir_is_tmp_dir: Optional[bool] = False
@@ -147,3 +147,8 @@ class Conf:
         )
         # whether requesting a _full mode_ (complete wiki)
         self.full_mode = not self.categories and not self.only and not self.exclude
+
+        if self.missing_tolerance < 0:
+            self.missing_tolerance = 0
+        if self.missing_tolerance > 100:
+            self.missing_tolerance = 100

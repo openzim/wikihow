@@ -172,6 +172,15 @@ def main():
     )
 
     parser.add_argument(
+        "--missing-article-tolerance",
+        help="Allow this percentage (0-100) of articles to be missing (HTTP 404). "
+        " Defaults to 0: no tolerance",
+        type=int,
+        dest="missing_tolerance",
+        default=0,
+    )
+
+    parser.add_argument(
         "--skip-dom-check",
         help="[dev] Don't perform DOM Integrity Checks on start",
         default=False,
