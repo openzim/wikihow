@@ -25,7 +25,7 @@ def main():
     parser.add_argument(
         "--output",
         help="Output folder for ZIM file",
-        default="/output",
+        default="output",
         dest="_output_dir",
     )
 
