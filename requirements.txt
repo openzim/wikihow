@@ -1,7 +1,6 @@
 requests>=2.26.0,<2.27
 Jinja2>=2.1,<3.0.1
-libzim>=1.0.0,<1.1
-zimscraperlib>=1.4.0,<1.5
+zimscraperlib>=1.6.0,<1.7
 css-beautify>=1.10.3<2.0
 six>=1.16.0,<2.0  # css-beautify dependency
 kiwixstorage>=0.8.1,<0.9
