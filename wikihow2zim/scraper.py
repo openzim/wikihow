@@ -849,7 +849,7 @@ class wikihow2zim(GlobalMixin):
         soup, _ = get_soup("/Special:CategoryListing")
         if not soup.select("#content_wrapper"):
             raise DomIntegrityError("#content_wrapper not found")
-        category_links = soup.select("#catlist_container #catlist a")
+        category_links = soup.select("#catlist a")
 
         if not category_links:
             raise DomIntegrityError("No links in #catlist_container")

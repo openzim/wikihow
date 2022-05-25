@@ -181,7 +181,9 @@ class Rewriter(GlobalMixin):
             # categorlyListing thumbnail link (english)
             seldef(".cat_container a[href]", True, True, False),
             # categorylisting link to category
-            seldef("#catlist_container #catlist a[href]", True, True, False),
+            seldef("#catlist a[href]", True, True, False),
+            # EN Top categories categorylisting link to category
+            seldef("#catlist_container .catlist a[href]", True, True, False),
             # top breadcrumb in article page
             seldef(".breadcrumbs a[href]", True, True, False),
             # top breadcrumb in article page
