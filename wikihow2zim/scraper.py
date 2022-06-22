@@ -447,11 +447,13 @@ class wikihow2zim(GlobalMixin):
                     target_path=f'{self.metadata["category_prefix"]}:'
                     f"{self.conf.single_category}",
                 )
-                self.creator.add_redirect(
-                    path=DEFAULT_HOMEPAGE,
-                    target_path=f'{self.metadata["category_prefix"]}:'
-                    f"{self.conf.single_category}",
-                )
+
+                if self.metadata["homepage_name"] != DEFAULT_HOMEPAGE:
+                    self.creator.add_redirect(
+                        path=DEFAULT_HOMEPAGE,
+                        target_path=f'{self.metadata["category_prefix"]}:'
+                        f"{self.conf.single_category}",
+                    )
                 self.creator.add_redirect(
                     path=self.metadata["url_special_category"],
                     target_path=DEFAULT_HOMEPAGE,
@@ -506,7 +508,7 @@ class wikihow2zim(GlobalMixin):
         """Scrape and create all pages found in footer links"""
         for link in self.metadata["footer_links"]:
             # there might be a link to Main-Page which would try (and fail)
-            # to create wikiHo Main-Page (already added a redirect in homepage)
+            # to create wikiHow Main-Page (already added a redirect in homepage)
             if link.path and link.path != "Main-Page":
                 self.scrape_article(link.path, remove_all_links=True)
             if self.conf.delay:
