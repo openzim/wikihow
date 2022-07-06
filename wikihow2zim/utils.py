@@ -66,7 +66,7 @@ def only_path_of(url: str):
     return normalize_ident(urllib.parse.urlparse(url).path)
 
 
-def fetch(path: str, **params) -> str:
+def fetch(path: str, failsafe: bool = False, **params) -> str:
     """(source text, actual_paths) of a path from source website
 
     actual_paths is amn ordered list of paths that were traversed to get to content.
@@ -75,13 +75,14 @@ def fetch(path: str, **params) -> str:
     session = requests.Session()
     session.mount("http", _get_retry_adapter(10))  # tied to http and https
     resp = session.get(get_url(path, **params), params=params)
-    resp.raise_for_status()
+    if not failsafe:
+        resp.raise_for_status()
 
     # we have params meaning we requested a page (?pg=xxx)
     # assumption: this must be a category page (so on same domain)
     # we thus need to use redirection target (which lost param) with params
     if params and resp.history:
-        return fetch(only_path_of(resp.url), **params)
+        return fetch(only_path_of(resp.url), failsafe=failsafe, **params)
     return resp.text, [
         no_leading_slash(only_path_of(r.url)) for r in resp.history + [resp]
     ]
@@ -148,6 +149,10 @@ def get_soup(path: str, **params) -> bs4.BeautifulSoup:
     """an lxml soup of a path on source website"""
     content, paths = fetch(path, **params)
     return get_soup_of(content), paths
+
+
+def is_in_review(path: str) -> bool:
+    return '"wgIsRestricted":true' in fetch(path, failsafe=True)[0]
 
 
 def soup_link_finder(elem: bs4.element.Tag) -> bool:

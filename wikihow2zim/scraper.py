@@ -27,6 +27,7 @@ from .utils import (
     get_footer_links_from,
     get_soup,
     get_soup_of,
+    is_in_review,
     no_trailing_slash,
     normalize_ident,
     parse_css,
@@ -623,6 +624,9 @@ class wikihow2zim(GlobalMixin):
             soup, _ = get_soup(f"/{article}")
         except requests.exceptions.HTTPError as exc:
             if exc.response.status_code == 404:
+                if is_in_review(f"/{article}"):
+                    logger.warning(">>> HTTP 404 (review), skipping")
+                    return True
                 logger.warning(">>> HTTP 404, skipping.")
                 return False
             raise exc
