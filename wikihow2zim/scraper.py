@@ -90,7 +90,7 @@ class wikihow2zim(GlobalMixin):
 
     def get_online_metadata(self):
         """metadata from online website, looking at homepage source code"""
-        logger.debug("Fecthing website metdata")
+        logger.debug("Fetching website metdata")
 
         soup, _ = get_soup("/")
 

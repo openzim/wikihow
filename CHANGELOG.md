@@ -11,6 +11,7 @@ as of 1.2.0.
 ## Changed
 
 - Fixed adding homepage twice for langs using Main-Page (#132)
+- Not failing on duplicate pages (#134)
 
 ## [1.2.0] - 2022-05-25
 
@@ -26,6 +27,7 @@ as of 1.2.0.
 - Using scraperlib 1.6 (libzim 7.2)
 - Default output dir (/output -> output)
 - Adapted DOM Integrity Checker to EN's Top categories change (#129)
+- In-review articles not considered missing (404) anymore (#130)
 
 # [1.1.0]
 
