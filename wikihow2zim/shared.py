@@ -7,6 +7,7 @@ import datetime
 import logging
 import threading
 
+from zimscraperlib.download import get_session
 from zimscraperlib.logging import getLogger as lib_getLogger
 from zimscraperlib.zim.creator import Creator
 
@@ -23,6 +24,8 @@ class Global:
         log_format="[%(threadName)s::%(asctime)s] %(levelname)s:%(message)s",
     )
     conf = None
+
+    session = get_session(max_retries=10)
 
     metadata = {}
 
@@ -154,6 +157,10 @@ class GlobalMixin:
     @property
     def expected_categories(self):
         return Global.expected_categories
+
+    @property
+    def session(self):
+        return Global.session
 
 
 logger = Global.logger

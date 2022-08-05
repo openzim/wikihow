@@ -210,7 +210,7 @@ class wikihow2zim(GlobalMixin):
                 return fh.read()
 
         with open(fpath, "wb") as fh:
-            content = requests.get(url).content
+            content = self.session.get(url).content
             fh.write(content)
             return content
 
@@ -875,7 +875,7 @@ class wikihow2zim(GlobalMixin):
             raise DomIntegrityError("has not category link")
 
         category_req_url = normalize_ident(to_url(f"/Category:{category_id}"))
-        resp = requests.get(category_req_url)
+        resp = self.session.get(category_req_url)
         if resp.status_code != 200:
             raise DomIntegrityError(f"Category link if not valid ({resp})")
 

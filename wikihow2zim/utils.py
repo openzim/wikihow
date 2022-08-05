@@ -11,11 +11,10 @@ from typing import Iterable, List, Tuple, Union
 
 import bs4
 import cssbeautifier
-import requests
 from kiwixstorage import KiwixStorage
 from pif import get_public_ip
 from tld import get_fld
-from zimscraperlib.download import _get_retry_adapter, stream_file
+from zimscraperlib.download import stream_file
 
 from .shared import Global, logger
 
@@ -72,9 +71,8 @@ def fetch(path: str, failsafe: bool = False, **params) -> str:
     actual_paths is amn ordered list of paths that were traversed to get to content.
     Without redirection, it should be a single path, equal to request
     Final, target path is always last"""
-    session = requests.Session()
-    session.mount("http", _get_retry_adapter(10))  # tied to http and https
-    resp = session.get(get_url(path, **params), params=params)
+
+    resp = Global.session.get(get_url(path, **params), params=params)
     if not failsafe:
         resp.raise_for_status()
 
@@ -182,7 +180,9 @@ def fix_pagination_links(soup: bs4.element.Tag):
 
 def get_categorylisting_url():
     return normalize_ident(
-        urllib.parse.urlparse(requests.get(to_url("/Special:CategoryListing")).url).path
+        urllib.parse.urlparse(
+            Global.session.get(to_url("/Special:CategoryListing")).url
+        ).path
     )[1:]
 
 
@@ -319,7 +319,7 @@ def rebuild_uri(
 def get_version_ident_for(url: str) -> str:
     """~version~ of the URL data to use for comparisons. Built from headers"""
     try:
-        resp = requests.head(url)
+        resp = Global.session.head(url)
         headers = resp.headers
     except Exception:
         logger.warning(f"Unable to HEAD {url}")
@@ -329,6 +329,7 @@ def get_version_ident_for(url: str) -> str:
                 byte_stream=io.BytesIO(),
                 block_size=1,
                 only_first_block=True,
+                session=Global.session,
             )
         except Exception:
             logger.warning(f"Unable to query image at {url}")
