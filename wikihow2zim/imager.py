@@ -40,7 +40,7 @@ class Imager:
         Bitmap images are converted to WebP and optimized
         SVG images are kept as is"""
         src, webp = io.BytesIO(), io.BytesIO()
-        stream_file(url=url, byte_stream=src)
+        stream_file(url=url, byte_stream=src, session=Global.session)
 
         if pathlib.Path(url).suffix == ".svg" or "/math/render/svg/" in url:
             return src
