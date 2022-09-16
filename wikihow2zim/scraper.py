@@ -276,15 +276,6 @@ class wikihow2zim(GlobalMixin):
             self.creator.add_item(
                 URLItem(path="assets/logo", url=self.metadata["logo"])
             )
-            # external link icons
-            for direction in ("ltr", "rtl"):
-                url = (
-                    f"https://en.wikipedia.org/w/skins/Vector/resources/common/images/"
-                    f"external-link-{direction}-icon.svg"
-                )
-                self.creator.add_item(
-                    URLItem(path=f"assets/external-link-{direction}-icon.svg", url=url)
-                )
 
         # handle the external and inline CSS found in homepage
         self.metadata["inline_digest"] = self.add_css(
