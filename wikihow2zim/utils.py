@@ -9,8 +9,10 @@ import urllib.parse
 import zlib
 from typing import Iterable, List, Tuple, Union
 
+import backoff
 import bs4
 import cssbeautifier
+import requests.exceptions
 from kiwixstorage import KiwixStorage
 from pif import get_public_ip
 from tld import get_fld
@@ -65,6 +67,23 @@ def only_path_of(url: str):
     return normalize_ident(urllib.parse.urlparse(url).path)
 
 
+def is_not_recoverable(exc: Exception) -> bool:
+    return (
+        isinstance(exc, requests.exceptions.HTTPError)
+        and exc.response.status_code == 404
+    )
+
+
+@backoff.on_exception(
+    backoff.expo,
+    requests.exceptions.RequestException,
+    giveup=is_not_recoverable,
+    logger=logger,
+    backoff_log_level="WARNING",
+    max_tries=5,  # try up to 5 times
+    factor=6,  # each try delayed by 6x2^<nbtry> seconds (12, 144, 1728)
+    max_value=1800,  # dont wait more than 30mn between retries
+)
 def fetch(path: str, failsafe: bool = False, **params) -> str:
     """(source text, actual_paths) of a path from source website
 

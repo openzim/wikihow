@@ -9,3 +9,4 @@ tld>=0.12.6,<0.13
 # fork supporting delays
 https://github.com/rgaudin/pywikiapi/archive/master.zip#egg=pywikiapi
 pywikiapi==4.3.0
+backoff>=2.1.2,<2.2
