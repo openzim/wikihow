@@ -4,6 +4,7 @@
 
 import collections
 import io
+import logging
 import re
 import urllib.parse
 import zlib
@@ -79,7 +80,7 @@ def is_not_recoverable(exc: Exception) -> bool:
     requests.exceptions.RequestException,
     giveup=is_not_recoverable,
     logger=logger,
-    backoff_log_level="WARNING",
+    backoff_log_level=logging.WARNING,
     max_tries=5,  # try up to 5 times
     factor=6,  # each try delayed by 6x2^<nbtry> seconds (12, 144, 1728)
     max_value=1800,  # dont wait more than 30mn between retries
