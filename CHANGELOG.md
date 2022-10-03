@@ -13,6 +13,7 @@ as of 1.2.0.
 - Making all requests through a single Session/connection pool
 - External link icon now bundled in-repo (#138)
 - More sophisticated requests-retry mechanism (#122)
+- Increased tolerance to API's maxlag issue
 
 ## [1.2.1] - 2022-08-03
 
