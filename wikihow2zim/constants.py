@@ -110,6 +110,10 @@ class Conf:
     def s3_url(self) -> str:
         return self.s3_url_with_credentials
 
+    @property
+    def tags(self) -> List:
+        return self.tag
+
     def __post_init__(self):
         self.main_url = Conf.get_url(self.lang_code)
         self.language = get_language_details(self.lang_code)
@@ -136,6 +140,12 @@ class Conf:
                 if ";" in tag:
                     self.tag += [p.strip() for p in tag.split(";")]
                     self.tag.remove(tag)
+        self.tag = list(
+            set(
+                self.tag
+                + ["_category:wikihow", "wikihow", "_videos:yes", "_pictures:yes"]
+            )
+        )
 
         self.categories = set() if self.categories is None else self.categories
 

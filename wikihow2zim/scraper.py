@@ -159,13 +159,6 @@ class wikihow2zim(GlobalMixin):
             self.conf.publisher = "openZIM"
         self.conf.publisher = self.conf.publisher.strip()
 
-        self.conf.tags = list(
-            set(
-                self.conf.tag
-                + ["_category:wikihow", "wikihow", "_videos:yes", "_pictures:yes"]
-            )
-        )
-
     def add_illustrations(self):
         logger.debug("Adding illustrations")
 
