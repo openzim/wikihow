@@ -92,8 +92,11 @@ def fetch(path: str, failsafe: bool = False, **params) -> str:
     Without redirection, it should be a single path, equal to request
     Final, target path is always last"""
 
+    Global.await_pause()
     resp = Global.session.get(get_url(path, **params), params=params)
-    if not failsafe:
+    if resp.status_code == 429:
+        Global.pause()
+    elif not failsafe:
         resp.raise_for_status()
 
     # we have params meaning we requested a page (?pg=xxx)

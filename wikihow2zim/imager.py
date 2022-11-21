@@ -8,6 +8,7 @@ import re
 import urllib.parse
 from typing import Optional
 
+import requests
 from kiwixstorage import KiwixStorage, NotFoundError
 from PIL import Image
 from zimscraperlib.download import stream_file
@@ -40,7 +41,15 @@ class Imager:
         Bitmap images are converted to WebP and optimized
         SVG images are kept as is"""
         src, webp = io.BytesIO(), io.BytesIO()
-        stream_file(url=url, byte_stream=src, session=Global.session)
+
+        Global.await_pause()
+        try:
+            stream_file(url=url, byte_stream=src, session=Global.session)
+        except requests.exceptions.HTTPError as exc:
+            if getattr(exc.response, "status_code") == 429:
+                Global.pause()
+            else:
+                raise exc
 
         if pathlib.Path(url).suffix == ".svg" or "/math/render/svg/" in url:
             return src

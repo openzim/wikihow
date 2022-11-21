@@ -6,6 +6,7 @@
 import datetime
 import logging
 import threading
+import time
 
 from zimscraperlib.download import get_session
 from zimscraperlib.logging import getLogger as lib_getLogger
@@ -41,6 +42,8 @@ class Global:
     expected_articles = set()
     expected_categories = set()
 
+    paused_until = None
+
     @staticmethod
     def set_debug(value):
         Global.debug = value
@@ -48,6 +51,39 @@ class Global:
         Global.logger.setLevel(level)
         for handler in Global.logger.handlers:
             handler.setLevel(level)
+
+    @staticmethod
+    def pause(cls):
+        # consider it a consequence of concurrent call.
+        # await initial pause call expiration
+        if cls.paused_until:
+            return
+        cls.logger.warning("PAUSING requests for 15min")
+        cls.paused_until = datetime.datetime.now() + datetime.timedelta(minutes=15)
+
+    @staticmethod
+    def await_pause(cls):
+        # quick exit when not paused
+        if not cls.paused_until:
+            return
+
+        # disable pause mode if it's in the past
+        now = datetime.datetime.now()
+        try:
+            until = (cls.paused_until - now).total_seconds()
+            if until <= 0:
+                cls.paused_until = None
+        except TypeError:
+            # should paused_until be set to None already
+            return
+
+        # block current thread (every seconds to allow interrupts)
+        try:
+            for _ in range(until):
+                time.sleep(1)
+        except TypeError:
+            # should paused_until be set to None already
+            return
 
     @staticmethod
     def setup():
