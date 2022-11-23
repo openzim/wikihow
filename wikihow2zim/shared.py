@@ -53,26 +53,26 @@ class Global:
             handler.setLevel(level)
 
     @staticmethod
-    def pause(cls):
+    def pause():
         # consider it a consequence of concurrent call.
         # await initial pause call expiration
-        if cls.paused_until:
+        if Global.paused_until:
             return
-        cls.logger.warning("PAUSING requests for 15min")
-        cls.paused_until = datetime.datetime.now() + datetime.timedelta(minutes=15)
+        Global.logger.warning("PAUSING requests for 15min")
+        Global.paused_until = datetime.datetime.now() + datetime.timedelta(minutes=15)
 
     @staticmethod
-    def await_pause(cls):
+    def await_pause():
         # quick exit when not paused
-        if not cls.paused_until:
+        if not Global.paused_until:
             return
 
         # disable pause mode if it's in the past
         now = datetime.datetime.now()
         try:
-            until = (cls.paused_until - now).total_seconds()
+            until = (Global.paused_until - now).total_seconds()
             if until <= 0:
-                cls.paused_until = None
+                Global.paused_until = None
         except TypeError:
             # should paused_until be set to None already
             return
