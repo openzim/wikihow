@@ -8,6 +8,10 @@ as of 1.2.0.
 
 ## [Unreleased]
 
+### Added
+
+- Global 15mn pause on 429 response (#142)
+
 ### Changed
 
 - Making all requests through a single Session/connection pool
