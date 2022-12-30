@@ -14,6 +14,7 @@ as of 1.2.0.
 - External link icon now bundled in-repo (#138)
 - More sophisticated requests-retry mechanism (#122)
 - Increased tolerance to API's maxlag issue
+- Updated zimscraperlib to 2.0.0
 
 ## [1.2.1] - 2022-08-03
 
