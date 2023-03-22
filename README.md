@@ -3,7 +3,7 @@
 `wikihow2zim` is an [OpenZIM](https://openzim.org) scraper to create offline versions of [wikiHow](https://www.wikihow.com) websites, in all its supported languages.
 
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/wikihow/badge)](https://www.codefactor.io/repository/github/openzim/wikihow)
-[![Docker](https://img.shields.io/docker/v/openzim/wikihow?label=docker&sort=semver)](https://hub.docker.com/r/openzim/wikihow)
+[![Docker](https://ghcr-badge.deta.dev/openzim/wikihow/latest_tag?label=docker)](https://ghcr.io/openzim/wikihow)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![PyPI version shields.io](https://img.shields.io/pypi/v/wikihow2zim.svg)](https://pypi.org/project/wikihow2zim/)
 
@@ -14,7 +14,7 @@
 ### Docker
 
 ```bash
-docker run -v my_dir:/output openzim/wikihow wikihow2zim --help
+docker run -v my_dir:/output ghcr.io/openzim/wikihow wikihow2zim --help
 ```
 
 ### Python
