@@ -512,15 +512,17 @@ class wikihow2zim(GlobalMixin):
         logger.info("Scraping expected category pages")
         for category in self.expected_categories:
             self.scrape_category(category)
+            if self.conf.delay:
+                time.sleep(self.conf.delay)
 
     def scrape_category(self, category: str):
         logger.info(f"> Category:{category}")
         nb_pages = self.scrape_category_page(category, page_num=1)
         if nb_pages > 1:
             for page_num in range(2, nb_pages + 1):
-                self.scrape_category_page(category, page_num=page_num)
                 if self.conf.delay:
                     time.sleep(self.conf.delay)
+                self.scrape_category_page(category, page_num=page_num)
 
     def scrape_category_page(self, category: str, page_num: int):
         category_url = f"/{self.metadata['category_prefix']}:{category}"
