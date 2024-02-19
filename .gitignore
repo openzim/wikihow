@@ -130,3 +130,6 @@ dmypy.json
 
 output/
 wikihow2zim/assets/vendor/
+
+# Visual Studio Code configuration which is not maintained
+.vscode
