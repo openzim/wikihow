@@ -2,10 +2,6 @@
 
 `wikihow2zim` is an [OpenZIM](https://openzim.org) scraper to create offline versions of [wikiHow](https://www.wikihow.com) websites, in all its supported languages.
 
-
-| :zap:        Scraper is known to have a very significant issue linked to throttling (https://github.com/openzim/wikihow/issues/150)   |
-|-----------------------------------------|
-
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/wikihow/badge)](https://www.codefactor.io/repository/github/openzim/wikihow)
 [![Docker](https://ghcr-badge.egpl.dev/openzim/wikihow/latest_tag?label=docker)](https://ghcr.io/openzim/wikihow)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
